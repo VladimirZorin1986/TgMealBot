@@ -7,7 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from keyboards.reply import authorization_kb, initial_kb
 from keyboards.inline import show_canteens_kb, show_places_kb, show_settings_kb
 from states.user_states import AuthState, SettingsState
-from services.user_services import (is_auth, get_customer_by_phone, get_id_from_callback, update_customer_data,
+from services.other_services import (get_id_from_callback, initiate_track_messages, add_message_to_track,
+                                     get_track_callback, set_track_callback, update_track_callback,
+                                     erase_track_messages)
+from services.user_services import (is_auth, get_customer_by_phone, update_customer_data,
                                     get_customer_by_tg_id)
 
 
@@ -15,27 +18,31 @@ router = Router()
 
 
 @router.message(CommandStart(), StateFilter(default_state))
-async def process_start(message: Message, state: FSMContext, session: AsyncSession):
+async def process_start_command(message: Message, state: FSMContext, session: AsyncSession):
     if not await is_auth(session, message.from_user.id):
         await state.set_state(AuthState.get_contact)
-        await message.answer('Для продолжения работы необходимо авторизоваться.',
-                             reply_markup=authorization_kb())
+        msg = await message.answer(
+            text='Для продолжения работы необходимо авторизоваться.',
+            reply_markup=authorization_kb())
+        await initiate_track_messages(msg, state)
     else:
-        await message.answer('Теперь вы можете сделать заказ', reply_markup=initial_kb())
+        await message.answer(
+            text='Теперь вы можете сделать заказ',
+            reply_markup=initial_kb()
+        )
 
 
 @router.message(StateFilter(AuthState.get_contact), F.contact)
 async def process_auth_with_contact(message: Message, state: FSMContext, session: AsyncSession):
-    phone_number = message.contact.phone_number
-    print(phone_number)
-    customer = await get_customer_by_phone(session, phone_number)
+    customer = await get_customer_by_phone(session, message.contact.phone_number)
     if customer:
         await state.update_data(customer_id=customer.id)
         await state.set_state(AuthState.get_canteen)
-        await message.answer(
+        msg = await message.answer(
             text='Выберите столовую, в которой будете заказывать еду:',
             reply_markup=await show_canteens_kb(session)
         )
+        await add_message_to_track(msg, state)
         await message.delete()
     else:
         await message.answer(
@@ -46,60 +53,60 @@ async def process_auth_with_contact(message: Message, state: FSMContext, session
 @router.message(StateFilter(AuthState.get_contact), ~F.contact)
 async def process_auth_no_contact(message: Message):
     await message.answer('Необходимо дать доступ к контактным данным.'
-                         'Иначе авторизация невозможна')
+                         'Иначе авторизация невозможна.')
 
 
 @router.message(StateFilter(AuthState.get_canteen))
-async def process_no_canteen(message: Message, session: AsyncSession):
-    await message.answer(
+async def process_no_canteen(message: Message, session: AsyncSession, state: FSMContext):
+    msg = await message.answer(
         text='Для продолжения выберите столовую:',
         reply_markup=await show_canteens_kb(session)
     )
+    await add_message_to_track(msg, state)
 
 
 @router.callback_query(StateFilter(AuthState.get_place), F.data.startswith('canteen'))
 @router.callback_query(StateFilter(AuthState.get_canteen))
 async def process_get_canteen(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
-    canteen_id = get_id_from_callback(callback)
+    markup = await show_places_kb(session, get_id_from_callback(callback))
     current_state = await state.get_state()
     message_text = 'Выберите место доставки еды:'
     if current_state == AuthState.get_canteen:
         await state.set_state(AuthState.get_place)
         msg = await callback.message.answer(
             text=message_text,
-            reply_markup=await show_places_kb(session, canteen_id)
+            reply_markup=markup
         )
-        await state.update_data(target_message=msg)
-        await state.update_data(cb_data=callback.data)
+        await add_message_to_track(msg, state)
+        await set_track_callback(callback, msg, state)
     else:
-        data = await state.get_data()
-        msg: Message = data.get('target_message')
-        cb_data = data.get('cb_data')
-        if cb_data != callback.data:
-            await msg.edit_text(
+        track_cb = await get_track_callback(state)
+        if track_cb.callback_data != callback.data:
+            await track_cb.message.edit_text(
                 text=message_text,
-                reply_markup=await show_places_kb(session, canteen_id)
+                reply_markup=markup
             )
-            await state.update_data(cb_data=callback.data)
+            await update_track_callback(track_cb, callback, state)
     await callback.answer()
 
 
 @router.callback_query(StateFilter(AuthState.get_place), F.data.startswith('place'))
 async def process_get_place(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
-    place_id = get_id_from_callback(callback)
-    tg_id = callback.from_user.id
-    data = await state.get_data()
-    await update_customer_data(
-        session=session,
-        customer_id=data.get('customer_id'),
-        tg_id=tg_id,
-        place_id=place_id
-    )
-    await state.clear()
+    await update_customer_data(session, callback, state)
     await callback.message.answer(
-        text='Вы успешно авторизовались. Теперь можно заказывать еду.',
+        text='Готов принять ваш первый заказ.',
         reply_markup=initial_kb()
     )
+    await callback.answer(
+        text='Вы успешно авторизовались!',
+        show_alert=True
+    )
+    await erase_track_messages(
+        state=state,
+        bot=callback.bot,
+        chat_id=callback.message.chat.id
+    )
+    await state.clear()
 
 
 @router.message(F.text == 'Настройки', StateFilter(default_state))

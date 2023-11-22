@@ -7,9 +7,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from sqlalchemy.ext.asyncio import AsyncSession
 from keyboards.inline import order_menu_kb, dish_count_kb, inline_confirm_cancel_kb,delete_order_kb
-from keyboards.reply import confirm_cancel_kb
+from keyboards.reply import confirm_cancel_kb, authorization_kb
 from states.order_states import NewOrderState, CancelOrderState
-from services.user_services import get_id_from_callback, get_customer_by_tg_id
+from services.other_services import get_id_from_callback, initiate_track_messages, add_message_to_track
+from services.user_services import get_customer_by_tg_id
 from services.order_services import (get_menu_positions_by_menu, get_menu_position_by_id, save_new_order,
                                      get_orders_by_customer, get_menu_by_id, delete_order)
 from database.models import OrderDetail, MenuPosition, Order
@@ -21,12 +22,19 @@ router = Router()
 @router.message(F.text == 'Сделать новый заказ', StateFilter(default_state))
 async def process_new_order(message: Message, session: AsyncSession, state: FSMContext):
     customer = await get_customer_by_tg_id(session, message.from_user.id)
-    await message.answer(
-        text='Выберите меню для заказа:',
-        reply_markup=await order_menu_kb(session, customer_id=customer.id)
-    )
-    await state.update_data(customer_id=customer.id)
-    await state.set_state(NewOrderState.menu_choice)
+    if customer:
+        await message.answer(
+            text='Выберите меню для заказа:',
+            reply_markup=await order_menu_kb(session, customer_id=customer.id)
+        )
+        await state.update_data(customer_id=customer.id)
+        await state.set_state(NewOrderState.menu_choice)
+    else:
+        await message.answer(
+            text='Вас больше нет в списке заказчиков. Пройдите повторную авторизацию.'
+                 'Для этого выберите в меню команду /start',
+            reply_markup=ReplyKeyboardRemove()
+        )
 
 
 @router.callback_query(StateFilter(NewOrderState.menu_choice))
