@@ -96,7 +96,7 @@ async def add_position_to_order_form(position: MenuPosition, state: FSMContext) 
 
 
 async def add_menu_id_to_order_form(menu_id: MenuId, state: FSMContext) -> None:
-    order_form = get_order_form(state)
+    order_form = await get_order_form(state)
     order_form.menu_id = menu_id
     await state.update_data(order_form=order_form)
 
