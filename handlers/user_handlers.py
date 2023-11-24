@@ -10,23 +10,25 @@ from states.user_states import AuthState, SettingsState
 from services.other_services import (add_message_to_track, get_track_callback, set_track_callback,
                                      update_track_callback, erase_track_messages)
 from services.user_services import (get_customer_by_phone, update_customer_data, get_customer_by_tg_id)
+from exceptions import IsNotCustomer
 
 router = Router()
 
 
 @router.message(StateFilter(AuthState.get_contact), F.contact)
 async def process_auth_with_contact(message: Message, state: FSMContext, session: AsyncSession):
-    customer = await get_customer_by_phone(session, message.contact.phone_number)
-    if customer:
+
+    try:
+        customer = await get_customer_by_phone(session, state, message.contact.phone_number)
         await state.update_data(customer_id=customer.id)
         await state.set_state(AuthState.get_canteen)
         msg = await message.answer(
             text='Выберите столовую, в которой будете заказывать еду:',
-            reply_markup=await show_canteens_kb(session)
+            reply_markup=await show_canteens_kb(session, customer)
         )
         await add_message_to_track(msg, state)
         await message.delete()
-    else:
+    except IsNotCustomer:
         await message.answer(
             text='Вас нет в списке заказчиков столовой. Обратитесь в поддержку.',
         )

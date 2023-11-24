@@ -1,15 +1,16 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
+from database.models import Customer
 from utils.service_functions import get_id_from_callback
-from services.user_services import get_canteens, get_places_by_canteen
+from services.user_services import get_valid_canteens, get_places_by_canteen
 from services.order_services import get_valid_menus_by_user, get_menu_positions_by_menu
 from keyboards.callbacks import (CanteenCallbackFactory, PlaceCallbackFactory, MenuCallbackFactory,
                                  PositionCallbackFactory)
 
 
-async def show_canteens_kb(session: AsyncSession) -> InlineKeyboardMarkup:
-    canteens = await get_canteens(session)
+async def show_canteens_kb(session: AsyncSession, customer: Customer) -> InlineKeyboardMarkup:
+    canteens = await get_valid_canteens(session, customer)
     builder = InlineKeyboardBuilder()
     for canteen in canteens:
         builder.button(

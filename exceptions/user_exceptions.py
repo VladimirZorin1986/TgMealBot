@@ -1,0 +1,2 @@
+class IsNotCustomer(Exception):
+    pass
