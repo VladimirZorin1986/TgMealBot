@@ -9,6 +9,7 @@ from keyboards.main_menu import set_main_menu
 from handlers.user_handlers import router as user_router
 from handlers.order_handlers import router as order_router
 from handlers.other_handlers import router as other_router
+from handlers.command_handlers import router as command_router
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ async def main():
 
     dp.update.middleware(DbSessionMiddleware(session_pool=session_maker))
 
+    dp.include_router(command_router)
     dp.include_router(user_router)
     dp.include_router(order_router)
     dp.include_router(other_router)

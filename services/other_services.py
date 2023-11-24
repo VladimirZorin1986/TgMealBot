@@ -1,13 +1,10 @@
 from typing import Any
+from contextlib import suppress
 from aiogram import Bot
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
 from utils.service_models import TrackCallback
-
-
-def get_id_from_callback(callback: CallbackQuery) -> int:
-    return int(callback.data.split(':')[-1])
 
 
 async def initiate_track_messages(message: Message, state: FSMContext) -> None:
@@ -48,8 +45,7 @@ async def erase_track_messages(state: FSMContext, bot: Bot, chat_id: int) -> Non
     track_msgs = data.get('track_messages')
     if track_msgs:
         for msg_id in track_msgs:
-            try:
+            with suppress(TelegramBadRequest):
                 await bot.delete_message(chat_id=chat_id, message_id=msg_id)
-            except TelegramBadRequest:
-                pass
+
 

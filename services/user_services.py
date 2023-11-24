@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, ScalarResult
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
-from services.other_services import get_id_from_callback
+from utils.service_functions import get_id_from_callback
 
 
 async def get_canteens(session: AsyncSession) -> ScalarResult[Canteen]:

@@ -1,35 +1,17 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import CommandStart, StateFilter
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from sqlalchemy.ext.asyncio import AsyncSession
 from keyboards.reply import authorization_kb, initial_kb
 from keyboards.inline import show_canteens_kb, show_places_kb, show_settings_kb
 from states.user_states import AuthState, SettingsState
-from services.other_services import (get_id_from_callback, initiate_track_messages, add_message_to_track,
-                                     get_track_callback, set_track_callback, update_track_callback,
-                                     erase_track_messages)
-from services.user_services import (is_auth, get_customer_by_phone, update_customer_data,
-                                    get_customer_by_tg_id)
-
+from services.other_services import (add_message_to_track, get_track_callback, set_track_callback,
+                                     update_track_callback, erase_track_messages)
+from services.user_services import (get_customer_by_phone, update_customer_data, get_customer_by_tg_id)
 
 router = Router()
-
-
-@router.message(CommandStart(), StateFilter(default_state))
-async def process_start_command(message: Message, state: FSMContext, session: AsyncSession):
-    if not await is_auth(session, message.from_user.id):
-        await state.set_state(AuthState.get_contact)
-        msg = await message.answer(
-            text='Для продолжения работы необходимо авторизоваться.',
-            reply_markup=authorization_kb())
-        await initiate_track_messages(msg, state)
-    else:
-        await message.answer(
-            text='Теперь вы можете сделать заказ',
-            reply_markup=initial_kb()
-        )
 
 
 @router.message(StateFilter(AuthState.get_contact), F.contact)
@@ -68,7 +50,7 @@ async def process_no_canteen(message: Message, session: AsyncSession, state: FSM
 @router.callback_query(StateFilter(AuthState.get_place), F.data.startswith('canteen'))
 @router.callback_query(StateFilter(AuthState.get_canteen))
 async def process_get_canteen(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
-    markup = await show_places_kb(session, get_id_from_callback(callback))
+    markup = await show_places_kb(session, callback)
     current_state = await state.get_state()
     message_text = 'Выберите место доставки еды:'
     if current_state == AuthState.get_canteen:

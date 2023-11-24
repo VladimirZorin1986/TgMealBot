@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from utils.service_models import CustomerId, MenuId, MenuPosId, OrderForm
 from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail
 from exceptions import InvalidPositionQuantity
-from services.other_services import get_id_from_callback
+from utils.service_functions import get_id_from_callback
 
 
 async def _get_canteen_id_by_user(session: AsyncSession, customer_id: CustomerId):
