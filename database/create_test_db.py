@@ -3,7 +3,7 @@ import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
 from sqlalchemy.orm import selectinload
-from database.models import Canteen, DeliveryPlace, Customer, Menu, MenuPosition, MealType, Base
+from database.models import Canteen, DeliveryPlace, Customer, Menu, MenuPosition, MealType, Base, CustomerPermission
 
 
 async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> None:
@@ -57,12 +57,28 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                 Customer(
                     eis_id=10000,
                     phone_number='+79856254915',
-                    orders=[]
+                    orders=[],
+                    permissions=[
+                        CustomerPermission(
+                            beg_date=datetime.date.today(),
+                            canteen_id=1
+                        ),
+                        CustomerPermission(
+                            beg_date=datetime.date.today(),
+                            canteen_id=2
+                        )
+                    ]
                 ),
                 Customer(
                     eis_id=20000,
                     phone_number='+79191399333',
-                    orders=[]
+                    orders=[],
+                    permissions=[
+                        CustomerPermission(
+                            beg_date=datetime.date.today(),
+                            canteen_id=2
+                        )
+                    ]
                 )
             ]
             meal_types = [
