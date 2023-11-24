@@ -1,0 +1,2 @@
+class InvalidPositionQuantity(Exception):
+    pass

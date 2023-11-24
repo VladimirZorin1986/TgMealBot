@@ -1,11 +1,13 @@
 import datetime
-from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, ScalarResult
 from sqlalchemy.orm import selectinload
-from utils.service_models import CustomerId, MenuId, MenuPosId, OrderForm
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
+from utils.service_models import CustomerId, MenuId, MenuPosId, OrderForm
+from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail
+from exceptions import InvalidPositionQuantity
+from services.other_services import get_id_from_callback
 
 
 async def _get_canteen_id_by_user(session: AsyncSession, customer_id: CustomerId):
@@ -34,12 +36,21 @@ async def get_menu_positions_by_menu(session: AsyncSession, menu_id: MenuId) -> 
     return positions.scalars()
 
 
+async def get_menu_positions(
+        session: AsyncSession, callback: CallbackQuery, state: FSMContext) -> ScalarResult[MenuPosition]:
+    menu_id = get_id_from_callback(callback)
+    await add_menu_id_to_order_form(menu_id, state)
+    return await get_menu_positions_by_menu(session, menu_id)
+
+
 async def get_menu_position_by_id(session: AsyncSession, menu_pos_id: MenuPosId) -> MenuPosition | None:
     position = await session.get(MenuPosition, menu_pos_id)
     return position
 
 
-async def save_new_order(session: AsyncSession, order: Order) -> None:
+async def confirm_pending_order(session: AsyncSession, state: FSMContext) -> None:
+    order_form = await get_order_form(state)
+    order = await create_order_from_form(order_form)
     session.add(order)
     await session.commit()
 
@@ -61,13 +72,12 @@ async def get_menu_by_id(session: AsyncSession, menu_id: MenuId) -> Menu | None:
 
 
 async def create_order_from_form(order_form: OrderForm) -> Order:
-    amt = sum(map(lambda detail: detail.cost, order_form.details))
     return Order(
         date=datetime.date.today(),
-        amt=amt,
+        amt=order_form.amt,
         customer_id=order_form.customer_id,
         menu_id=order_form.menu_id,
-        details=order_form.details
+        details=list(order_form.details.values())
     )
 
 
@@ -89,16 +99,36 @@ async def load_position(state: FSMContext, message: Message) -> MenuPosition:
     return data.get(str(message.message_id))
 
 
-async def add_position_to_order_form(position: MenuPosition, state: FSMContext) -> None:
+async def add_position_to_order_form(callback: CallbackQuery, state: FSMContext) -> None:
+    position = await load_position(state, callback.message)
     order_form = await get_order_form(state)
-    order_form.details.append(OrderDetail(quantity=position.qty, menu_pos_id=position.id))
+    order_form.details.update(
+        {(position.name, position.cost): OrderDetail(quantity=position.quantity, menu_pos_id=position.id)}
+    )
     await state.update_data(order_form=order_form)
+
+
+async def set_order_amt(state: FSMContext):
+    order_form = await get_order_form(state)
+    amt = sum(detail.quantity * cost for (_, cost), detail in order_form.details.items())
+    order_form.amt = amt
+    await state.update_data(order_form=order_form)
+    return order_form
 
 
 async def add_menu_id_to_order_form(menu_id: MenuId, state: FSMContext) -> None:
     order_form = await get_order_form(state)
     order_form.menu_id = menu_id
     await state.update_data(order_form=order_form)
+
+
+def increment_position_qty(position: MenuPosition, callback_data: str) -> None:
+    if callback_data == 'plus':
+        position.quantity += 1
+    elif position.quantity - 1 > 0:
+        position.quantity -= 1
+    else:
+        raise InvalidPositionQuantity
 
 
 if __name__ == '__main__':

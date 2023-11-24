@@ -111,6 +111,7 @@ class MenuPosition(Base):
         Numeric(precision=10, scale=2, asdecimal=True),
         nullable=True
     )
+    quantity: Mapped[int] = mapped_column(SmallInteger, default=1)
     menu_id: Mapped[int] = mapped_column(
         ForeignKey('menu.id', ondelete='CASCADE')
     )
