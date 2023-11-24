@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from utils.service_models import CustomerId, MenuId, MenuPosId, OrderForm
 from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail
-from exceptions import InvalidPositionQuantity
+from exceptions import InvalidPositionQuantity, InvalidOrderMenu
 from utils.service_functions import get_id_from_callback
 
 
@@ -50,9 +50,13 @@ async def get_menu_position_by_id(session: AsyncSession, menu_pos_id: MenuPosId)
 
 async def confirm_pending_order(session: AsyncSession, state: FSMContext) -> None:
     order_form = await get_order_form(state)
-    order = await create_order_from_form(order_form)
-    session.add(order)
-    await session.commit()
+    menu = await get_menu_by_id(session, order_form.menu_id)
+    if _is_valid_menu(session, menu):
+        order = await create_order_from_form(order_form)
+        session.add(order)
+        await session.commit()
+    else:
+        raise InvalidOrderMenu
 
 
 async def delete_order(session: AsyncSession, order: Order) -> None:

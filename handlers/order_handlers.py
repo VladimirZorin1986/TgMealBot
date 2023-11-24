@@ -14,7 +14,7 @@ from services.order_services import (get_menu_positions, get_menu_position_by_id
                                      get_orders_by_customer, get_menu_by_id, delete_order, create_order_form,
                                      remember_position, load_position, set_order_amt,
                                      add_position_to_order_form, confirm_pending_order, increment_position_qty)
-from exceptions import InvalidPositionQuantity
+from exceptions import InvalidPositionQuantity, InvalidOrderMenu
 from presentation.order_views import full_order_view, position_view
 
 
@@ -115,14 +115,21 @@ async def process_cancel_order(message: Message, session: AsyncSession, state: F
 
 @router.callback_query(StateFilter(NewOrderState.check_status), F.data == 'save')
 async def process_pending_new_order(callback: CallbackQuery, session: AsyncSession, state: FSMContext):
-    await confirm_pending_order(session, state)
-    await callback.answer(
-        text='Ваш заказ отправлен',
-        show_alert=True
-    )
-    await add_message_to_track(callback.message, state)
-    await erase_track_messages(state, callback.bot, callback.message.chat.id)
-    await state.clear()
+    try:
+        await confirm_pending_order(session, state)
+        await callback.answer(
+            text='Ваш заказ отправлен',
+            show_alert=True
+        )
+    except InvalidOrderMenu:
+        await callback.answer(
+            text='Срок для заказа истек.',
+            show_alert=True
+        )
+    finally:
+        await add_message_to_track(callback.message, state)
+        await erase_track_messages(state, callback.bot, callback.message.chat.id)
+        await state.clear()
 
 
 @router.callback_query(StateFilter(NewOrderState.check_status), F.data == 'cancel')
