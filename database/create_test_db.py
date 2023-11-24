@@ -1,8 +1,6 @@
 import asyncio
 import datetime
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
-from sqlalchemy.orm import selectinload
 from database.models import Canteen, DeliveryPlace, Customer, Menu, MenuPosition, MealType, Base, CustomerPermission
 
 
