@@ -59,6 +59,25 @@ class Customer(Base):
     )
 
     orders: Mapped[List['Order']] = relationship()
+    permissions: Mapped[List['CustomerPermission']] = relationship()
+
+
+class CustomerPermission(Base):
+    __tablename__ = 'customer_permission'
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        Identity(always=True),
+        primary_key=True
+    )
+    beg_date: Mapped[datetime.date] = mapped_column(Date)
+    end_date: Mapped[Optional[datetime.date]] = mapped_column(Date, nullable=True)
+    canteen_id: Mapped[int] = mapped_column(
+        ForeignKey('menu.id', ondelete='CASCADE')
+    )
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey('customer.id', ondelete='CASCADE')
+    )
 
 
 class MealType(Base):

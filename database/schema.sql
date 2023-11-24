@@ -33,6 +33,23 @@ CREATE TABLE customer (
         ON DELETE SET NULL
 );
 
+CREATE TABLE customer_permission (
+    id_permission INT GENERATED ALWAYS AS IDENTITY,
+    beg_date DATE NOT NULL,
+    end_date DATE,
+    canteen_id SMALLINT NOT NULL,
+    customer_id SMALLINT NOT NULL
+    PRIMARY KEY (id_permission),
+    CONSTRAINT fk_canteen3
+        FOREIGN KEY (canteen_id)
+        REFERENCES canteen (id_canteen)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_customer2
+        FOREIGN KEY (customer_id)
+        REFERENCES customer (id_customer)
+        ON DELETE CASCADE
+)
+
 -- CREATE MENU TABLES
 
 CREATE TABLE meal_type (
@@ -66,7 +83,7 @@ CREATE TABLE menu_position (
     dish_name VARCHAR(120) NOT NULL,
     weight VARCHAR(40),
     cost MONEY,
-    qty_complex SMALLINT,
+    quantity SMALLINT DEFAULT 1,
     PRIMARY KEY (id_menu_pos),
     CONSTRAINT fk_menu
         FOREIGN KEY (id_menu)
