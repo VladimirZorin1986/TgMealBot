@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from keyboards.inline import order_menu_kb, dish_count_kb, inline_confirm_cancel_kb,delete_order_kb
 from keyboards.reply import confirm_cancel_kb
 from states.order_states import NewOrderState, CancelOrderState
-from services.other_services import (initiate_track_messages, add_message_to_track, erase_track_messages)
+from services.other_services import (initiate_track_messages, add_message_to_track, erase_track_messages,
+                                     terminate_state_branch)
 from services.user_services import get_customer_by_tg_id
 from services.order_services import (get_menu_positions, get_menu_position_by_id,
                                      get_orders_by_customer, get_menu_by_id, delete_order, create_order_form,
@@ -105,12 +106,11 @@ async def process_order_info(message: Message, session: AsyncSession, state: FSM
 
 @router.message(StateFilter(NewOrderState.dish_choice), F.text == 'Отменить')
 async def process_cancel_order(message: Message, session: AsyncSession, state: FSMContext):
-    await erase_track_messages(state, message.bot, message.chat.id)
-    await state.clear()
     await message.answer(
         text='Заполнение заказа отменено',
-        show_alert=True
+        reply_markup=ReplyKeyboardRemove()
     )
+    await terminate_state_branch(message, state, add_last=False)
 
 
 @router.callback_query(StateFilter(NewOrderState.check_status), F.data == 'save')
@@ -127,9 +127,7 @@ async def process_pending_new_order(callback: CallbackQuery, session: AsyncSessi
             show_alert=True
         )
     finally:
-        await add_message_to_track(callback.message, state)
-        await erase_track_messages(state, callback.bot, callback.message.chat.id)
-        await state.clear()
+        await terminate_state_branch(callback.message, state)
 
 
 @router.callback_query(StateFilter(NewOrderState.check_status), F.data == 'cancel')
@@ -138,9 +136,7 @@ async def process_cancel_new_order(callback: CallbackQuery, session: AsyncSessio
         text='Заказ отменен',
         show_alert=True
     )
-    await add_message_to_track(callback.message, state)
-    await erase_track_messages(state, callback.bot, callback.message.chat.id)
-    await state.clear()
+    await terminate_state_branch(callback.message, state)
 
 
 @router.message(StateFilter(default_state), F.text == 'Отменить заказ')

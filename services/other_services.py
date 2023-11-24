@@ -49,3 +49,10 @@ async def erase_track_messages(state: FSMContext, bot: Bot, chat_id: int) -> Non
                 await bot.delete_message(chat_id=chat_id, message_id=msg_id)
 
 
+async def terminate_state_branch(message: Message, state: FSMContext, add_last: bool = True) -> None:
+    if add_last:
+        await add_message_to_track(message, state)
+    await erase_track_messages(state, message.bot, message.chat.id)
+    await state.clear()
+
+
