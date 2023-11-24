@@ -12,5 +12,5 @@ async def full_order_view(order_form: OrderForm) -> str:
 
 
 def position_view(position: MenuPosition) -> str:
-    result = f'{position.name}\nКол-во: {position.quantity}\nСтоимость: {position.quantity*position.cost}'
+    result = f'{position.name}\nКол-во: {position.quantity}\nСтоимость: {position.quantity * position.cost}'
     return result

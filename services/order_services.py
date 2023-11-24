@@ -126,13 +126,15 @@ async def add_menu_id_to_order_form(menu_id: MenuId, state: FSMContext) -> None:
     await state.update_data(order_form=order_form)
 
 
-def increment_position_qty(position: MenuPosition, callback_data: str) -> None:
-    if callback_data == 'plus':
+async def increment_position_qty(state: FSMContext, callback: CallbackQuery) -> MenuPosition:
+    position = await load_position(state, callback.message)
+    if callback.data == 'plus':
         position.quantity += 1
     elif position.quantity - 1 > 0:
         position.quantity -= 1
     else:
         raise InvalidPositionQuantity
+    return position
 
 
 if __name__ == '__main__':

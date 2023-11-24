@@ -8,13 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from keyboards.inline import order_menu_kb, dish_count_kb, inline_confirm_cancel_kb,delete_order_kb
 from keyboards.reply import confirm_cancel_kb
 from states.order_states import NewOrderState, CancelOrderState
-from services.other_services import (initiate_track_messages, add_message_to_track, erase_track_messages,
-                                     terminate_state_branch)
+from services.other_services import (initiate_track_messages, add_message_to_track, terminate_state_branch)
 from services.user_services import get_customer_by_tg_id
 from services.order_services import (get_menu_positions, get_menu_position_by_id,
                                      get_orders_by_customer, get_menu_by_id, delete_order, create_order_form,
-                                     remember_position, load_position, set_order_amt,
-                                     add_position_to_order_form, confirm_pending_order, increment_position_qty)
+                                     remember_position, set_order_amt, add_position_to_order_form,
+                                     confirm_pending_order, increment_position_qty)
 from exceptions import InvalidPositionQuantity, InvalidOrderMenu
 from presentation.order_views import full_order_view, position_view
 
@@ -64,11 +63,10 @@ async def new_order_positions(callback: CallbackQuery, session: AsyncSession, st
 
 @router.callback_query(StateFilter(NewOrderState.dish_choice), F.data.in_(['plus', 'minus']))
 async def change_quantity_of_position(callback: CallbackQuery, session: AsyncSession, state: FSMContext):
-    position = await load_position(state, callback.message)
     try:
-        increment_position_qty(position, callback.data)
+        position = await increment_position_qty(state, callback)
         await callback.message.edit_text(
-            text=f'{position.name}\nКол-во: {position.quantity}\nСтоимость: {position.quantity * position.cost}',
+            text=position_view(position),
             reply_markup=dish_count_kb()
         )
     except InvalidPositionQuantity:
