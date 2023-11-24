@@ -204,38 +204,6 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
             session.add_all(meal_types)
 
 
-async def select_and_update_objects(
-    async_session: async_sessionmaker[AsyncSession],
-) -> None:
-    async with async_session() as session:
-        stmt = select(Canteen).options(selectinload(Canteen.places))
-
-        result = await session.execute(stmt)
-
-        for canteen in result.scalars():
-            print(canteen)
-            print(f"name: {canteen.name}")
-            for place in canteen.places:
-                print(place)
-
-        result = await session.execute(select(Canteen).order_by(Canteen.id).limit(1))
-
-        tng = result.scalars().one()
-
-        tng.name = 'Столовая ТНГ'
-
-        await session.commit()
-
-        # access attribute subsequent to commit; this is what
-        # expire_on_commit=False allows
-        print(tng.name)
-
-        # alternatively, AsyncAttrs may be used to access any attribute
-        # as an awaitable (new in 2.0.13)
-        for place in await tng.awaitable_attrs.places:
-            print(place.name)
-
-
 async def async_main() -> None:
     engine = create_async_engine(
         "postgresql+asyncpg://postgres:postgres@localhost/test_pg",
@@ -251,7 +219,6 @@ async def async_main() -> None:
         await conn.run_sync(Base.metadata.create_all)
 
     await insert_objects(async_session)
-    # await select_and_update_objects(async_session)
 
     # for AsyncEngine created in function scope, close and
     # clean-up pooled connections
