@@ -1,16 +1,16 @@
 -- CREATE CUSTOMER TABLES
 
 CREATE TABLE canteen (
-    canteen_id SMALLINT GENERATED ALWAYS AS IDENTITY,
-    canteen_name VARCHAR(100) NOT NULL,
+    canteen_id SMALLINT,
+    name VARCHAR(100) NOT NULL,
     PRIMARY KEY (canteen_id)
 );
 
 CREATE TABLE delivery_place (
-    place_id SMALLINT GENERATED ALWAYS AS IDENTITY,
-    place_name VARCHAR(80) NOT NULL,
+    place_id SMALLINT,
+    name VARCHAR(80) NOT NULL,
     canteen_id SMALLINT NOT NULL,
-    begin_date DATE NOT NULL,
+    beg_date DATE NOT NULL,
     end_date DATE,
     PRIMARY KEY (place_id),
     CONSTRAINT fk_canteen
@@ -53,7 +53,7 @@ CREATE TABLE customer_permission (
 
 CREATE TABLE meal_type (
     type_id SMALLINT GENERATED ALWAYS AS IDENTITY,
-    type_name VARCHAR(20) NOT NULL,
+    name VARCHAR(20) NOT NULL,
     PRIMARY KEY (type_id)
 );
 
@@ -62,7 +62,7 @@ CREATE TABLE menu (
     canteen_id SMALLINT NOT NULL,
     type_id SMALLINT NOT NULL,
     menu_date DATE NOT NULL,
-    menu_name VARCHAR(120) NOT NULL,
+    name VARCHAR(120) NOT NULL,
     beg_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP NOT NULL,
     PRIMARY KEY (menu_id),
