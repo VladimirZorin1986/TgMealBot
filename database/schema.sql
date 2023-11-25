@@ -12,7 +12,6 @@ CREATE TABLE delivery_place (
     canteen_id SMALLINT NOT NULL,
     begin_date DATE NOT NULL,
     end_date DATE,
-    custom_menu_flg BOOLEAN,
     PRIMARY KEY (place_id),
     CONSTRAINT fk_canteen
         FOREIGN KEY (canteen_id)
@@ -98,7 +97,7 @@ CREATE TABLE meal_order (
     customer_id INT NOT NULL,
     menu_id INT NOT NULL,
     order_date DATE NOT NULL,
-    amt MONEY,
+    amt NUMERIC(10,2),
     PRIMARY KEY (order_id),
     CONSTRAINT fk_customer
         FOREIGN KEY (customer_id)
