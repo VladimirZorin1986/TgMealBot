@@ -1,7 +1,7 @@
 -- CREATE CUSTOMER TABLES
 
 CREATE TABLE canteen (
-    canteen_id SMALLINT,
+    canteen_id TINYINT,
     name VARCHAR(100) NOT NULL,
     PRIMARY KEY (canteen_id)
 );
@@ -9,7 +9,7 @@ CREATE TABLE canteen (
 CREATE TABLE delivery_place (
     place_id SMALLINT,
     name VARCHAR(80) NOT NULL,
-    canteen_id SMALLINT NOT NULL,
+    canteen_id TINYINT NOT NULL,
     beg_date DATE NOT NULL,
     end_date DATE,
     PRIMARY KEY (place_id),
@@ -36,8 +36,8 @@ CREATE TABLE customer_permission (
     permission_id INT GENERATED ALWAYS AS IDENTITY,
     beg_date DATE NOT NULL,
     end_date DATE,
-    canteen_id SMALLINT NOT NULL,
-    customer_id SMALLINT NOT NULL
+    canteen_id TINYINT NOT NULL,
+    customer_id INT NOT NULL
     PRIMARY KEY (permission_id),
     CONSTRAINT fk_canteen3
         FOREIGN KEY (canteen_id)
@@ -52,15 +52,15 @@ CREATE TABLE customer_permission (
 -- CREATE MENU TABLES
 
 CREATE TABLE meal_type (
-    type_id SMALLINT GENERATED ALWAYS AS IDENTITY,
+    type_id TINYINT GENERATED ALWAYS AS IDENTITY,
     name VARCHAR(20) NOT NULL,
     PRIMARY KEY (type_id)
 );
 
 CREATE TABLE menu (
-    menu_id INT GENERATED ALWAYS AS IDENTITY,
-    canteen_id SMALLINT NOT NULL,
-    type_id SMALLINT NOT NULL,
+    menu_id INT,
+    canteen_id TINYINT NOT NULL,
+    type_id TINYINT NOT NULL,
     menu_date DATE NOT NULL,
     name VARCHAR(120) NOT NULL,
     beg_time TIMESTAMP NOT NULL,
@@ -77,12 +77,12 @@ CREATE TABLE menu (
 );
 
 CREATE TABLE menu_position (
-    menu_pos_id BIGINT GENERATED ALWAYS AS IDENTITY,
+    menu_pos_id BIGINT,
     menu_id INT NOT NULL,
     dish_name VARCHAR(120) NOT NULL,
     weight VARCHAR(40),
     cost NUMERIC(10,2),
-    quantity SMALLINT DEFAULT 1,
+    quantity TINYINT DEFAULT 1,
     PRIMARY KEY (menu_pos_id),
     CONSTRAINT fk_menu
         FOREIGN KEY (menu_id)
@@ -113,7 +113,7 @@ CREATE TABLE order_detail (
     detail_id BIGINT GENERATED ALWAYS AS IDENTITY,
     order_id INT NOT NULL,
     menu_pos_id BIGINT NOT NULL,
-    quantity SMALLINT NOT NULL,
+    quantity TINYINT NOT NULL,
     PRIMARY KEY (id_order_detail),
     CONSTRAINT fk_order
         FOREIGN KEY (order_id)
