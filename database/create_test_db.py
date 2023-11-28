@@ -9,72 +9,82 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
         async with session.begin():
             canteens = [
                 Canteen(
+                    id=2,
                     name='Столовая ТНГ',
                     places=[
                         DeliveryPlace(
+                            id=1,
                             name='Причал',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            customers=[]
+                            orders=[]
                         ),
                         DeliveryPlace(
+                            id=2,
                             name='Столовая',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            customers=[]
+                            orders=[]
                         ),
                         DeliveryPlace(
+                            id=3,
                             name='Администрация',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            customers=[]
+                            orders=[]
                         )
                     ],
-                    menus=[]
+                    menus=[],
+                    permissions=[]
                 ),
                 Canteen(
+                    id=4,
                     name='Столовая ОПС',
                     places=[
                         DeliveryPlace(
+                            id=4,
                             name='Терминал',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            customers=[]
+                            orders=[]
                         ),
                         DeliveryPlace(
+                            id=5,
                             name='Столовая',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            customers=[]
+                            orders=[]
                         ),
                         DeliveryPlace(
+                            id=6,
                             name='Порт',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            customers=[]
+                            orders=[]
                         )
                     ],
-                    menus=[]
+                    menus=[],
+                    permissions=[]
                 )
             ]
             customers = [
                 Customer(
-                    eis_id=10000,
+                    id=10000,
                     phone_number='+79856254915',
                     orders=[],
                     permissions=[
                         CustomerPermission(
                             beg_date=datetime.date.today(),
-                            canteen_id=1
+                            canteen_id=2
                         ),
                         CustomerPermission(
                             beg_date=datetime.date.today(),
-                            canteen_id=2
+                            canteen_id=4
                         )
                     ]
                 ),
                 Customer(
-                    eis_id=20000,
+                    id=20000,
                     phone_number='+79191399333',
                     orders=[],
                     permissions=[
                         CustomerPermission(
                             beg_date=datetime.date.today(),
-                            canteen_id=2
+                            canteen_id=4
                         )
                     ]
                 )
@@ -84,23 +94,27 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                     name='завтрак',
                     menus=[
                         Menu(
+                            id=1,
                             name='Меню на завтрак',
                             date=datetime.date.fromisoformat('2023-11-20'),
                             beg_time=datetime.datetime.fromisoformat('2023-11-16'),
                             end_time=datetime.datetime.fromisoformat('2023-11-25'),
-                            canteen_id=2,
+                            canteen_id=4,
                             positions=[
                                 MenuPosition(
+                                    id=1,
                                     name='Блинчики со сметаной',
                                     weight='200',
                                     cost=120.00
                                 ),
                                 MenuPosition(
+                                    id=2,
                                     name='Яичница',
                                     weight='150',
                                     cost=80.50
                                 ),
                                 MenuPosition(
+                                    id=3,
                                     name='Чай с сахаром',
                                     weight='100/50',
                                     cost=25.45
@@ -114,23 +128,27 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                     name='обед',
                     menus=[
                         Menu(
+                            id=2,
                             name='Меню на обед',
                             date=datetime.date.fromisoformat('2023-11-19'),
                             beg_time=datetime.datetime.fromisoformat('2023-11-16'),
-                            end_time=datetime.datetime.fromisoformat('2023-11-25'),
-                            canteen_id=2,
+                            end_time=datetime.datetime.fromisoformat('2023-11-30'),
+                            canteen_id=4,
                             positions=[
                                 MenuPosition(
+                                    id=4,
                                     name='Борщ со сметаной',
                                     weight='200',
                                     cost=110.00
                                 ),
                                 MenuPosition(
+                                    id=5,
                                     name='Котлеты с пюре',
                                     weight='150',
                                     cost=110.00
                                 ),
                                 MenuPosition(
+                                    id=6,
                                     name='Кофе черный',
                                     weight='100/50',
                                     cost=40.50
@@ -139,23 +157,27 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                             orders=[]
                         ),
                         Menu(
+                            id=3,
                             name='Меню на обед',
                             date=datetime.date.fromisoformat('2023-11-20'),
                             beg_time=datetime.datetime.fromisoformat('2023-11-16'),
-                            end_time=datetime.datetime.fromisoformat('2023-11-25'),
-                            canteen_id=1,
+                            end_time=datetime.datetime.fromisoformat('2023-11-30'),
+                            canteen_id=2,
                             positions=[
                                 MenuPosition(
+                                    id=7,
                                     name='Щи зеленые',
                                     weight='200',
                                     cost=120.00
                                 ),
                                 MenuPosition(
+                                    id=8,
                                     name='Биточки с рисом',
                                     weight='150',
                                     cost=80.50
                                 ),
                                 MenuPosition(
+                                    id=9,
                                     name='Капучино',
                                     weight='100/50',
                                     cost=25.45
@@ -169,23 +191,27 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                     name='ужин',
                     menus=[
                         Menu(
+                            id=4,
                             name='Меню на ужин',
                             date=datetime.date.fromisoformat('2023-11-19'),
                             beg_time=datetime.datetime.fromisoformat('2023-11-16'),
-                            end_time=datetime.datetime.fromisoformat('2023-11-25'),
-                            canteen_id=2,
+                            end_time=datetime.datetime.fromisoformat('2023-11-30'),
+                            canteen_id=4,
                             positions=[
                                 MenuPosition(
+                                    id=10,
                                     name='Салат витаминный',
                                     weight='200',
                                     cost=100.80
                                 ),
                                 MenuPosition(
+                                    id=11,
                                     name='Говядина по-испански',
                                     weight='150',
                                     cost=200.10
                                 ),
                                 MenuPosition(
+                                    id=12,
                                     name='Компот из сухофруктов',
                                     weight='100/50',
                                     cost=15.50

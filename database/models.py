@@ -2,7 +2,7 @@ import datetime
 from decimal import Decimal
 from typing import List, Optional
 from sqlalchemy import ForeignKey, Identity
-from sqlalchemy.types import BigInteger, String, SmallInteger, Integer, Date, DateTime, Numeric
+from sqlalchemy.types import BigInteger, String, SmallInteger, Integer, Date, DateTime, Numeric, Boolean
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -16,13 +16,13 @@ class Canteen(Base):
 
     id: Mapped[int] = mapped_column(
         SmallInteger,
-        Identity(always=True),
         primary_key=True
     )
     name: Mapped[str] = mapped_column(String(100))
 
     places: Mapped[List['DeliveryPlace']] = relationship()
     menus: Mapped[List['Menu']] = relationship()
+    permissions: Mapped[List['CustomerPermission']] = relationship()
 
 
 class DeliveryPlace(Base):
@@ -30,7 +30,6 @@ class DeliveryPlace(Base):
 
     id: Mapped[int] = mapped_column(
         SmallInteger,
-        Identity(always=True),
         primary_key=True
     )
     name: Mapped[str] = mapped_column(String(80))
@@ -39,7 +38,7 @@ class DeliveryPlace(Base):
     canteen_id: Mapped[int] = mapped_column(
         ForeignKey(column='canteen.id', ondelete='CASCADE')
     )
-    customers: Mapped[List['Customer']] = relationship()
+    orders: Mapped[List['Order']] = relationship()
 
 
 class Customer(Base):
@@ -47,16 +46,15 @@ class Customer(Base):
 
     id: Mapped[int] = mapped_column(
         Integer,
-        Identity(always=True),
         primary_key=True
     )
-    eis_id: Mapped[int] = mapped_column(Integer)
     tg_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
-    phone_number: Mapped[str] = mapped_column(String(12))
-    place_id: Mapped[Optional[int]] = mapped_column(
+    phone_number: Mapped[str] = mapped_column(String(12), unique=True, index=True)
+    place_id: Mapped[int] = mapped_column(
         ForeignKey('delivery_place.id', ondelete='SET NULL'),
         nullable=True
     )
+    choice_place_in_order: Mapped[bool] = mapped_column(Boolean, default=False)
 
     orders: Mapped[List['Order']] = relationship()
     permissions: Mapped[List['CustomerPermission']] = relationship()
@@ -67,13 +65,12 @@ class CustomerPermission(Base):
 
     id: Mapped[int] = mapped_column(
         Integer,
-        Identity(always=True),
         primary_key=True
     )
     beg_date: Mapped[datetime.date] = mapped_column(Date)
     end_date: Mapped[Optional[datetime.date]] = mapped_column(Date, nullable=True)
     canteen_id: Mapped[int] = mapped_column(
-        ForeignKey('menu.id', ondelete='CASCADE')
+        ForeignKey('canteen.id', ondelete='CASCADE')
     )
     customer_id: Mapped[int] = mapped_column(
         ForeignKey('customer.id', ondelete='CASCADE')
@@ -98,7 +95,6 @@ class Menu(Base):
 
     id: Mapped[int] = mapped_column(
         Integer,
-        Identity(always=True),
         primary_key=True
     )
     name: Mapped[str] = mapped_column(String(120))
@@ -120,8 +116,7 @@ class MenuPosition(Base):
     __tablename__ = 'menu_position'
 
     id: Mapped[int] = mapped_column(
-        Integer,
-        Identity(always=True),
+        BigInteger,
         primary_key=True
     )
     name: Mapped[str] = mapped_column(String(120))
@@ -144,7 +139,7 @@ class Order(Base):
         Identity(always=True),
         primary_key=True
     )
-    date: Mapped[datetime.date] = mapped_column(Date)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
     amt: Mapped[Optional[Decimal]] = mapped_column(
         Numeric(precision=10, scale=2, asdecimal=True),
         nullable=True
@@ -154,6 +149,9 @@ class Order(Base):
     )
     menu_id: Mapped[int] = mapped_column(
         ForeignKey('menu.id', ondelete='RESTRICT')
+    )
+    place_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey('delivery_place.id', ondelete='RESTRICT')
     )
 
     details: Mapped[List['OrderDetail']] = relationship()
