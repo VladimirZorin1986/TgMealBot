@@ -10,7 +10,7 @@ def initial_kb() -> ReplyKeyboardMarkup:
     kb = [
         [KeyboardButton(text='Сделать новый заказ'),
          KeyboardButton(text='Отменить заказ')],
-        [KeyboardButton(text='Настройки')]
+        [KeyboardButton(text='Изменить место доставки')]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, one_time_keyboard=True)
 

@@ -37,7 +37,6 @@ async def get_customer_by_phone(session: AsyncSession, state: FSMContext, phone_
     stmt = select(Customer).where(Customer.phone_number == phone_number).options(selectinload(Customer.permissions))
     result = await session.execute(stmt)
     customer = result.scalar_one_or_none()
-    print(_is_valid_customer(customer))
     if customer and _is_valid_customer(customer):
         await state.update_data(customer_id=customer.id)
         return customer
@@ -52,15 +51,19 @@ def _is_valid_customer(customer: Customer) -> bool:
     return any(filter(_is_valid_permission, customer.permissions))
 
 
-async def get_customer_by_tg_id(session: AsyncSession, tg_id: int) -> Customer | None:
+async def get_customer_by_tg_id(session: AsyncSession, state: FSMContext, tg_id: int) -> Customer:
     stmt = select(Customer).where(Customer.tg_id == tg_id)
-    result = await session.execute(stmt)
-    return result.scalar_one_or_none()
+    result = await session.execute(stmt.options(selectinload(Customer.permissions)))
+    customer = result.scalar_one_or_none()
+    if customer and _is_valid_customer(customer):
+        await state.update_data(customer_id=customer.id)
+        return customer
+    raise IsNotCustomer
 
 
 async def is_auth(session: AsyncSession, user_id: int) -> bool:
     stmt = select(Customer).where(Customer.tg_id == user_id).where(Customer.place_id is not None)
-    result = await session.execute(stmt)
+    result = await session.execute(stmt.options(selectinload(Customer.permissions)))
     customer = result.scalar_one_or_none()
     if customer and _is_valid_customer(customer):
         return True

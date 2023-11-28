@@ -5,8 +5,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from sqlalchemy.ext.asyncio import AsyncSession
 from keyboards.reply import authorization_kb, initial_kb
-from keyboards.inline import show_canteens_kb, show_places_kb, show_settings_kb
-from states.user_states import AuthState, SettingsState
+from keyboards.inline import show_canteens_kb, show_places_kb
+from states.user_states import AuthState, ChangeDeliveryPlace
 from services.other_services import (add_message_to_track, get_track_callback, set_track_callback,
                                      update_track_callback, terminate_state_branch)
 from services.user_services import (get_customer_by_phone, update_customer_data, get_customer_by_tg_id,
@@ -50,10 +50,10 @@ async def process_auth_no_contact(message: Message):
 
 
 @router.message(StateFilter(AuthState.get_canteen))
+@router.message(StateFilter(AuthState.get_place))
 async def process_no_canteen(message: Message, session: AsyncSession, state: FSMContext):
     msg = await message.answer(
-        text='Для продолжения выберите столовую:',
-        reply_markup=await show_canteens_kb(session)
+        text='Для продолжения авторизации необходимо следовать инструкции'
     )
     await add_message_to_track(msg, state)
 
@@ -97,32 +97,27 @@ async def process_get_place(callback: CallbackQuery, state: FSMContext, session:
     await terminate_state_branch(callback.message, state, add_last=False)
 
 
-@router.message(F.text == 'Настройки', StateFilter(default_state))
+@router.message(F.text == 'Изменить место доставки', StateFilter(default_state))
 async def process_settings(message: Message, session: AsyncSession, state: FSMContext):
-    customer = await get_customer_by_tg_id(session, message.from_user.id)
-    if customer:
-        await state.set_state(SettingsState.get_option)
-        await state.update_data(customer_id=customer.id)
-        await message.answer(
-            text='Варианты настроек:',
-            reply_markup=show_settings_kb()
-        )
-    else:
+    try:
+        customer = await get_customer_by_tg_id(session, state, message.from_user.id)
+        valid_canteens = await get_valid_canteens(session, customer)
+        if len(valid_canteens) > 1:
+            await state.set_state(ChangeDeliveryPlace.set_new_canteen)
+            await message.answer(
+                text='Выберите столовую:',
+                reply_markup=show_canteens_kb(valid_canteens)
+            )
+        else:
+            await state.set_state(ChangeDeliveryPlace.set_new_place)
+            await message.answer(
+                text='Выберите новое место доставки:',
+                reply_markup=await show_places_kb(session, *valid_canteens)
+            )
+    except IsNotCustomer:
         await message.answer(
             text='Вас больше нет в списке заказчиков. Вам необходимо заново пройти авторизацию.',
             reply_markup=authorization_kb()
         )
-
-
-@router.callback_query(StateFilter(SettingsState.get_option), F.data == 'change_place')
-async def process_change_place_setting(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
-    await state.set_state(SettingsState.set_option)
-    await callback.message.answer(
-        text='Выберите столовую для заказа еды',
-        reply_markup=await show_canteens_kb(session)
-    )
-    await callback.answer()
-
-
-
-
+    finally:
+        await message.delete()

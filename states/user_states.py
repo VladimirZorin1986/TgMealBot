@@ -7,6 +7,6 @@ class AuthState(StatesGroup):
     get_place = State()
 
 
-class SettingsState(StatesGroup):
-    get_option = State()
-    set_option = State()
+class ChangeDeliveryPlace(StatesGroup):
+    set_new_canteen = State()
+    set_new_place = State()

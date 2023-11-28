@@ -38,18 +38,6 @@ async def show_places_kb(
     return builder.adjust(1).as_markup()
 
 
-def show_settings_kb() -> InlineKeyboardMarkup:
-    kb = [
-        [
-            InlineKeyboardButton(
-                text='Изменить место доставки',
-                callback_data='change_place'
-            )
-        ]
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=kb)
-
-
 async def order_menu_kb(session: AsyncSession, customer_id: int) -> InlineKeyboardMarkup:
     menus = await get_valid_menus_by_user(session, customer_id)
     builder = InlineKeyboardBuilder()
