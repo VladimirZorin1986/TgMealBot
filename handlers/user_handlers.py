@@ -103,13 +103,13 @@ async def process_settings(message: Message, session: AsyncSession, state: FSMCo
         customer = await get_customer_by_tg_id(session, state, message.from_user.id)
         valid_canteens = await get_valid_canteens(session, customer)
         if len(valid_canteens) > 1:
-            await state.set_state(ChangeDeliveryPlace.set_new_canteen)
+            await state.set_state(AuthState.get_canteen)
             await message.answer(
                 text='Выберите столовую:',
                 reply_markup=show_canteens_kb(valid_canteens)
             )
         else:
-            await state.set_state(ChangeDeliveryPlace.set_new_place)
+            await state.set_state(AuthState.get_place)
             await message.answer(
                 text='Выберите новое место доставки:',
                 reply_markup=await show_places_kb(session, *valid_canteens)
