@@ -77,16 +77,17 @@ async def get_menu_by_id(session: AsyncSession, menu_id: MenuId) -> Menu | None:
 
 async def create_order_from_form(order_form: OrderForm) -> Order:
     return Order(
-        date=datetime.date.today(),
+        created_at=datetime.datetime.now(),
         amt=order_form.amt,
         customer_id=order_form.customer_id,
         menu_id=order_form.menu_id,
+        place_id=order_form.place_id,
         details=list(order_form.details.values())
     )
 
 
-async def create_order_form(customer_id: CustomerId, state: FSMContext) -> None:
-    await state.update_data({'order_form': OrderForm(customer_id=customer_id)})
+async def create_order_form(customer: Customer, state: FSMContext) -> None:
+    await state.update_data({'order_form': OrderForm(customer_id=customer.id, place_id=customer.place_id)})
 
 
 async def get_order_form(state: FSMContext) -> OrderForm:

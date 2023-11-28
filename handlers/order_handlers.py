@@ -30,7 +30,7 @@ async def process_new_order(message: Message, session: AsyncSession, state: FSMC
             reply_markup=await order_menu_kb(session, customer_id=customer.id)
         )
         await initiate_track_messages(msg, state)
-        await create_order_form(customer.id, state)
+        await create_order_form(customer, state)
         await state.set_state(NewOrderState.menu_choice)
     else:
         await message.answer(
@@ -144,7 +144,7 @@ async def process_delete_order(message: Message, session: AsyncSession, state: F
     for order in orders:
         order_text_list = []
         menu = await get_menu_by_id(session, order.menu_id)
-        order_text_list.append(f'Заказ {menu.name} на {menu.date}. Сделан {order.date}.\n')
+        order_text_list.append(f'Заказ {menu.name} на {menu.date}. Сделан {order.created_at}.\n')
         for detail in order.details:
             menu_pos = await get_menu_position_by_id(session, detail.menu_pos_id)
             order_text_list.append(f'{menu_pos.name} Кол-во: {detail.quantity}')

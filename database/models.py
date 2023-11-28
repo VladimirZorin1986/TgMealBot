@@ -39,6 +39,7 @@ class DeliveryPlace(Base):
         ForeignKey(column='canteen.id', ondelete='CASCADE')
     )
     orders: Mapped[List['Order']] = relationship()
+    customers: Mapped[List['Customer']] = relationship()
 
 
 class Customer(Base):

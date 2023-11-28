@@ -8,8 +8,9 @@ from keyboards.reply import authorization_kb, initial_kb
 from keyboards.inline import show_canteens_kb, show_places_kb, show_settings_kb
 from states.user_states import AuthState, SettingsState
 from services.other_services import (add_message_to_track, get_track_callback, set_track_callback,
-                                     update_track_callback, erase_track_messages)
-from services.user_services import (get_customer_by_phone, update_customer_data, get_customer_by_tg_id)
+                                     update_track_callback, terminate_state_branch)
+from services.user_services import (get_customer_by_phone, update_customer_data, get_customer_by_tg_id,
+                                    get_valid_canteens)
 from exceptions import IsNotCustomer
 
 router = Router()
@@ -17,21 +18,29 @@ router = Router()
 
 @router.message(StateFilter(AuthState.get_contact), F.contact)
 async def process_auth_with_contact(message: Message, state: FSMContext, session: AsyncSession):
-
     try:
         customer = await get_customer_by_phone(session, state, message.contact.phone_number)
-        await state.update_data(customer_id=customer.id)
-        await state.set_state(AuthState.get_canteen)
-        msg = await message.answer(
-            text='Выберите столовую, в которой будете заказывать еду:',
-            reply_markup=await show_canteens_kb(session, customer)
-        )
+        valid_canteens = await get_valid_canteens(session, customer)
+        if len(valid_canteens) > 1:
+            await state.set_state(AuthState.get_canteen)
+            msg = await message.answer(
+                text='Выберите столовую, в которой будете заказывать еду:',
+                reply_markup=show_canteens_kb(valid_canteens)
+            )
+        else:
+            await state.set_state(AuthState.get_place)
+            msg = await message.answer(
+                text='Выберите место доставки:',
+                reply_markup=await show_places_kb(session, *valid_canteens)
+            )
         await add_message_to_track(msg, state)
-        await message.delete()
     except IsNotCustomer:
+        await state.clear()
         await message.answer(
             text='Вас нет в списке заказчиков столовой. Обратитесь в поддержку.',
         )
+    finally:
+        await message.delete()
 
 
 @router.message(StateFilter(AuthState.get_contact), ~F.contact)
@@ -52,7 +61,7 @@ async def process_no_canteen(message: Message, session: AsyncSession, state: FSM
 @router.callback_query(StateFilter(AuthState.get_place), F.data.startswith('canteen'))
 @router.callback_query(StateFilter(AuthState.get_canteen))
 async def process_get_canteen(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
-    markup = await show_places_kb(session, callback)
+    markup = await show_places_kb(session, callback=callback)
     current_state = await state.get_state()
     message_text = 'Выберите место доставки еды:'
     if current_state == AuthState.get_canteen:
@@ -85,12 +94,7 @@ async def process_get_place(callback: CallbackQuery, state: FSMContext, session:
         text='Вы успешно авторизовались!',
         show_alert=True
     )
-    await erase_track_messages(
-        state=state,
-        bot=callback.bot,
-        chat_id=callback.message.chat.id
-    )
-    await state.clear()
+    await terminate_state_branch(callback.message, state, add_last=False)
 
 
 @router.message(F.text == 'Настройки', StateFilter(default_state))

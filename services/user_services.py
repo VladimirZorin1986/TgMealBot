@@ -1,7 +1,8 @@
 import datetime
-from database.models import Customer, Canteen, DeliveryPlace
+from database.models import Customer, Canteen, DeliveryPlace, CustomerPermission
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, ScalarResult
+from sqlalchemy.orm import selectinload
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 from utils.service_functions import get_id_from_callback
@@ -14,34 +15,41 @@ async def _get_canteens(session: AsyncSession) -> ScalarResult[Canteen]:
     return canteens.scalars()
 
 
+async def get_canteen_by_id(session: AsyncSession, canteen_id: int) -> Canteen | None:
+    return await session.get(Canteen, ident=canteen_id)
+
+
 async def get_valid_canteens(session: AsyncSession, customer: Customer) -> list[Canteen]:
     canteens = await _get_canteens(session)
-    valid_canteen_ids = set(permission.canteen_id for permission in customer.permissions)
+    valid_canteen_ids = set(permission.canteen_id for permission in customer.permissions
+                            if _is_valid_permission(permission))
     return [canteen for canteen in canteens if canteen.id in valid_canteen_ids]
 
 
-async def get_places_by_canteen(session: AsyncSession, canteen_id: int) -> ScalarResult[DeliveryPlace]:
-    stmt = select(DeliveryPlace).where(DeliveryPlace.canteen_id == canteen_id)
+async def get_places_by_canteen(session: AsyncSession, canteen: Canteen) -> ScalarResult[DeliveryPlace]:
+    stmt = select(DeliveryPlace).where(DeliveryPlace.canteen_id == canteen.id)
     places = await session.execute(stmt)
     return places.scalars()
 
 
 async def get_customer_by_phone(session: AsyncSession, state: FSMContext, phone_number: str) -> Customer:
     phone_number = phone_number if len(phone_number) == 12 else f'+{phone_number}'
-    stmt = select(Customer).where(Customer.phone_number == phone_number)
+    stmt = select(Customer).where(Customer.phone_number == phone_number).options(selectinload(Customer.permissions))
     result = await session.execute(stmt)
     customer = result.scalar_one_or_none()
+    print(_is_valid_customer(customer))
     if customer and _is_valid_customer(customer):
         await state.update_data(customer_id=customer.id)
         return customer
     raise IsNotCustomer
 
 
+def _is_valid_permission(permission: CustomerPermission) -> bool:
+    return permission.beg_date <= datetime.date.today() <= (permission.end_date or datetime.date.today())
+
+
 def _is_valid_customer(customer: Customer) -> bool:
-    return bool(
-        [permission.id for permission in customer.permissions
-         if permission.beg_date <= datetime.date.today() <= (permission.end_date or datetime.date.today())]
-    )
+    return any(filter(_is_valid_permission, customer.permissions))
 
 
 async def get_customer_by_tg_id(session: AsyncSession, tg_id: int) -> Customer | None:

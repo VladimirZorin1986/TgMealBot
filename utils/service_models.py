@@ -7,7 +7,7 @@ from database.models import OrderDetail
 MenuId = int
 CustomerId = int
 MenuPosId = int
-Money = Decimal
+PlaceId = int
 MenuPosName = str
 MenuPosCost = Decimal
 
@@ -21,6 +21,7 @@ class TrackCallback:
 @dataclass
 class OrderForm:
     customer_id: CustomerId
+    place_id: PlaceId = field(default=None)
     menu_id: MenuId = field(default=None)
-    amt: Money = field(default=None)
+    amt: Decimal = field(default=None)
     details: dict[tuple[MenuPosName, MenuPosCost], OrderDetail] = field(default_factory=dict)

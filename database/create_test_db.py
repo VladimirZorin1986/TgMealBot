@@ -16,19 +16,22 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                             id=1,
                             name='Причал',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            orders=[]
+                            orders=[],
+                            customers=[]
                         ),
                         DeliveryPlace(
                             id=2,
                             name='Столовая',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            orders=[]
+                            orders=[],
+                            customers=[]
                         ),
                         DeliveryPlace(
                             id=3,
                             name='Администрация',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            orders=[]
+                            orders=[],
+                            customers=[]
                         )
                     ],
                     menus=[],
@@ -42,19 +45,22 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                             id=4,
                             name='Терминал',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            orders=[]
+                            orders=[],
+                            customers=[]
                         ),
                         DeliveryPlace(
                             id=5,
                             name='Столовая',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            orders=[]
+                            orders=[],
+                            customers=[]
                         ),
                         DeliveryPlace(
                             id=6,
                             name='Порт',
                             begin_date=datetime.date(year=2023, month=9, day=18),
-                            orders=[]
+                            orders=[],
+                            customers=[]
                         )
                     ],
                     menus=[],
