@@ -103,3 +103,11 @@ def delete_order_kb() -> InlineKeyboardMarkup:
         inline_keyboard=[[InlineKeyboardButton(text='Удалить заказ', callback_data='delete_order')]]
     )
 
+
+def help_chapters_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='Авторизация', callback_data='auth_help')],
+            [InlineKeyboardButton(text='Работа с заказами', callback_data='order_help')]
+        ]
+    )
