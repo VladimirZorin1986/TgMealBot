@@ -3,7 +3,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.enums.parse_mode import ParseMode
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from config import load_config
+from config import load_config, on_startup
 from middleware import DbSessionMiddleware
 from keyboards.main_menu import set_main_menu
 from handlers.user_handlers import router as user_router
@@ -31,7 +31,7 @@ async def main():
     bot = Bot(token=config.bot.token, parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=config.bot.storage)
 
-    dp.startup.register(set_main_menu)
+    dp.startup.register(on_startup)
 
     dp.update.middleware(DbSessionMiddleware(session_pool=session_maker))
 

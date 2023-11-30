@@ -6,7 +6,7 @@ from aiogram.fsm.state import default_state
 from sqlalchemy.ext.asyncio import AsyncSession
 from states.user_states import AuthState
 from services.user_services import is_auth
-from services.other_services import initiate_track_messages, terminate_state_branch
+from services.other_services import add_message_to_track, terminate_state_branch
 from keyboards.reply import authorization_kb, initial_kb
 from keyboards.inline import help_chapters_kb
 from presentation import help_info
@@ -22,7 +22,7 @@ async def process_start_command(message: Message, state: FSMContext, session: As
         msg = await message.answer(
             text='Для продолжения работы необходимо авторизоваться.',
             reply_markup=authorization_kb())
-        await initiate_track_messages(msg, state)
+        await add_message_to_track(msg, state)
     else:
         await message.answer(
             text='Теперь вы можете сделать заказ',

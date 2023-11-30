@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from keyboards.inline import order_menu_kb, dish_count_kb, inline_confirm_cancel_kb,delete_order_kb
 from keyboards.reply import confirm_cancel_kb
 from states.order_states import NewOrderState, CancelOrderState
-from services.other_services import (initiate_track_messages, add_message_to_track, terminate_state_branch)
+from services.other_services import add_message_to_track, terminate_state_branch
 from services.user_services import get_customer_by_tg_id
 from services.order_services import (get_menu_positions, get_menu_position_by_id,
                                      get_orders_by_customer, get_menu_by_id, delete_order, create_order_form,
@@ -29,7 +29,7 @@ async def process_new_order(message: Message, session: AsyncSession, state: FSMC
             text='Выберите меню для заказа:',
             reply_markup=await order_menu_kb(session, customer_id=customer.id)
         )
-        await initiate_track_messages(msg, state)
+        await add_message_to_track(msg, state)
         await create_order_form(customer, state)
         await state.set_state(NewOrderState.menu_choice)
     else:

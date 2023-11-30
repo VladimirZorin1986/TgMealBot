@@ -7,16 +7,14 @@ from aiogram.exceptions import TelegramBadRequest
 from utils.service_models import TrackCallback
 
 
-async def initiate_track_messages(message: Message, state: FSMContext) -> None:
-    await state.update_data({'track_messages': [message.message_id]})
-
-
 async def add_message_to_track(message: Message, state: FSMContext) -> None:
     data: dict[str, Any] = await state.get_data()
     track_list: list | None = data.get('track_messages')
     if track_list:
         track_list.append(message.message_id)
-        await state.update_data(track_messages=track_list)
+    else:
+        track_list = [message.message_id]
+    await state.update_data(track_messages=track_list)
 
 
 async def set_track_callback(callback: CallbackQuery, message: Message, state: FSMContext) -> None:
