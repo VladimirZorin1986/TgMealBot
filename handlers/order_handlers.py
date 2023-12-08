@@ -23,7 +23,7 @@ router = Router()
 
 @router.message(F.text == 'Сделать новый заказ', StateFilter(default_state))
 async def process_new_order(message: Message, session: AsyncSession, state: FSMContext):
-    customer = await get_customer_by_tg_id(session, message.from_user.id)
+    customer = await get_customer_by_tg_id(session, state, message.from_user.id)
     if customer:
         msg = await message.answer(
             text='Выберите меню для заказа:',
@@ -139,7 +139,7 @@ async def process_cancel_new_order(callback: CallbackQuery, session: AsyncSessio
 
 @router.message(StateFilter(default_state), F.text == 'Отменить заказ')
 async def process_delete_order(message: Message, session: AsyncSession, state: FSMContext):
-    customer = await get_customer_by_tg_id(session, message.from_user.id)
+    customer = await get_customer_by_tg_id(session, state, message.from_user.id)
     orders = await get_orders_by_customer(session, customer.id)
     for order in orders:
         order_text_list = []
