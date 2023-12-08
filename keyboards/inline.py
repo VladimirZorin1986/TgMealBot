@@ -6,7 +6,7 @@ from utils.service_functions import get_id_from_callback
 from services.user_services import get_places_by_canteen, get_canteen_by_id
 from services.order_services import get_valid_menus_by_user, get_menu_positions_by_menu
 from keyboards.callbacks import (CanteenCallbackFactory, PlaceCallbackFactory, MenuCallbackFactory,
-                                 PositionCallbackFactory)
+                                 PositionCallbackFactory, OrderCallbackFactory)
 
 
 def show_canteens_kb(canteens: list[Canteen]) -> InlineKeyboardMarkup:
@@ -98,9 +98,18 @@ def inline_confirm_cancel_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=kb)
 
 
-def delete_order_kb() -> InlineKeyboardMarkup:
+def delete_order_kb(order_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text='Удалить заказ', callback_data='delete_order')]]
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text='Удалить заказ',
+                    callback_data=OrderCallbackFactory(
+                        order_id=order_id
+                    ).pack()
+                )
+            ]
+        ]
     )
 
 

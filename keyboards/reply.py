@@ -22,3 +22,8 @@ def confirm_cancel_kb() -> ReplyKeyboardMarkup:
          ]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+
+
+def back_to_initial_kb() -> ReplyKeyboardMarkup:
+    kb = [[KeyboardButton(text='Вернуться в главное меню')]]
+    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)

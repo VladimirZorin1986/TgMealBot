@@ -15,3 +15,7 @@ class MenuCallbackFactory(CallbackData, prefix='menu'):
 
 class PositionCallbackFactory(CallbackData, prefix='position'):
     position_id: int
+
+
+class OrderCallbackFactory(CallbackData, prefix='order'):
+    order_id: int

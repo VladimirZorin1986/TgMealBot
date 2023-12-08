@@ -6,16 +6,16 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from sqlalchemy.ext.asyncio import AsyncSession
 from keyboards.inline import order_menu_kb, dish_count_kb, inline_confirm_cancel_kb,delete_order_kb
-from keyboards.reply import confirm_cancel_kb
+from keyboards.reply import confirm_cancel_kb, back_to_initial_kb, initial_kb
 from states.order_states import NewOrderState, CancelOrderState
 from services.other_services import add_message_to_track, terminate_state_branch
 from services.user_services import get_customer_by_tg_id
-from services.order_services import (get_menu_positions, get_menu_position_by_id,
-                                     get_orders_by_customer, get_menu_by_id, delete_order, create_order_form,
+from services.order_services import (get_menu_positions, get_order_by_id,
+                                     get_orders_by_customer, delete_order, create_order_form,
                                      remember_position, set_order_amt, add_position_to_order_form,
-                                     confirm_pending_order, increment_position_qty)
+                                     confirm_pending_order, increment_position_qty, create_form_from_order)
 from exceptions import InvalidPositionQuantity, InvalidOrderMenu
-from presentation.order_views import full_order_view, position_view
+from presentation.order_views import full_order_view, position_view, delete_order_view
 
 
 router = Router()
@@ -96,7 +96,7 @@ async def process_order_info(message: Message, session: AsyncSession, state: FSM
     )
     await add_message_to_track(msg1, state)
     msg2 = await message.answer(
-        text=await full_order_view(order_form),
+        text=full_order_view(order_form),
         reply_markup=inline_confirm_cancel_kb()
     )
     await add_message_to_track(msg2, state)
@@ -142,22 +142,21 @@ async def process_delete_order(message: Message, session: AsyncSession, state: F
     customer = await get_customer_by_tg_id(session, state, message.from_user.id)
     orders = await get_orders_by_customer(session, customer.id)
     for order in orders:
-        order_text_list = []
-        menu = await get_menu_by_id(session, order.menu_id)
-        order_text_list.append(f'Заказ {menu.name} на {menu.date}. Сделан {order.created_at}.\n')
-        for detail in order.details:
-            menu_pos = await get_menu_position_by_id(session, detail.menu_pos_id)
-            order_text_list.append(f'{menu_pos.name} Кол-во: {detail.quantity}')
-        order_text_list.append(f'Итого: {order.amt}')
+        order_form = await create_form_from_order(session, order)
         msg = await message.answer(
-            text='\n'.join(order_text_list),
-            reply_markup=delete_order_kb()
+            text=delete_order_view(order_form),
+            reply_markup=delete_order_kb(order.id)
         )
+        await add_message_to_track(msg, state)
         await state.update_data({str(msg.message_id): order})
     await state.set_state(CancelOrderState.order_choices)
+    await message.answer(
+        text='Для возвращения в главное меню, после удаления выбранных заказов, нажмите на кнопку',
+        reply_markup=back_to_initial_kb()
+    )
 
 
-@router.callback_query(StateFilter(CancelOrderState.order_choices), F.data == 'delete_order')
+@router.callback_query(StateFilter(CancelOrderState.order_choices), F.data.startswith('order'))
 async def process_delete_order(callback: CallbackQuery, session: AsyncSession, state: FSMContext):
     data = await state.get_data()
     order = data.get(str(callback.message.message_id))
@@ -166,8 +165,16 @@ async def process_delete_order(callback: CallbackQuery, session: AsyncSession, s
         text='Заказ успешно удален',
         show_alert=True
     )
-    await state.clear()
     await callback.message.delete()
+
+
+@router.message(StateFilter(CancelOrderState.order_choices), F.text == 'Вернуться в главное меню')
+async def process_back_to_main_menu(message: Message, session: AsyncSession, state: FSMContext):
+    await message.answer(
+        text='Возврат в главное меню',
+        reply_markup=initial_kb()
+    )
+    await terminate_state_branch(message, state)
 
 
 

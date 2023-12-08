@@ -4,7 +4,7 @@ from sqlalchemy import select, ScalarResult
 from sqlalchemy.orm import selectinload
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
-from utils.service_models import CustomerId, MenuId, MenuPosId, OrderForm
+from utils.service_models import CustomerId, MenuId, MenuPosId, OrderForm, ExistOrderForm, DetailForm
 from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail
 from exceptions import InvalidPositionQuantity, InvalidOrderMenu
 from utils.service_functions import get_id_from_callback
@@ -84,6 +84,38 @@ async def create_order_from_form(order_form: OrderForm) -> Order:
         place_id=order_form.place_id,
         details=list(order_form.details.values())
     )
+
+
+async def create_form_from_order(session: AsyncSession, order: Order) -> ExistOrderForm:
+    menu = await get_menu_by_id(session, order.menu_id)
+    details = []
+    for order_detail in order.details:
+        menu_pos = await get_menu_position_by_id(session, order_detail.menu_pos_id)
+        details.append(
+            DetailForm(
+                detail_id=order_detail.id,
+                quantity=order_detail.quantity,
+                menu_pos_id=menu_pos.id,
+                menu_pos_name=menu_pos.name,
+                menu_pos_cost=menu_pos.cost
+            )
+        )
+    return ExistOrderForm(
+        order_id=order.id,
+        created_at=order.created_at,
+        amt=order.amt,
+        menu_name=menu.name,
+        menu_date=menu.date,
+        details=details
+    )
+
+
+async def get_order_by_id(
+        session: AsyncSession,
+        callback: CallbackQuery | None = None,
+        order_id: int | None = None) -> Order | None:
+    order_id = order_id or get_id_from_callback(callback)
+    return await session.get(Order, order_id)
 
 
 async def create_order_form(customer: Customer, state: FSMContext) -> None:
