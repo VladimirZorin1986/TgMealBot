@@ -30,7 +30,7 @@ async def process_start_command(message: Message, state: FSMContext, session: As
         )
 
 
-@router.message(Command('help'), StateFilter(default_state))
+@router.message(Command('help'))
 async def process_help_command(message: Message):
     await message.answer(
         text=help_info('base_help'),

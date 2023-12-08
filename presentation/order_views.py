@@ -4,35 +4,56 @@ from database.models import MenuPosition
 
 
 def full_order_view(order_form: OrderForm) -> str:
-    result = [
-        f'{name} Кол-во: {detail.quantity} Стоимость: {cost * detail.quantity}'
+    body = PrettyTable(field_names=['Наименование', 'Кол-во', 'Стоимость'], padding_width=0)
+    rows = [
+        [
+            '\n'.join(map(lambda s: s.strip(), name.split())),
+            detail.quantity,
+            cost * detail.quantity
+        ]
         for (name, cost), detail in order_form.details.items()
     ]
-    result.append(f'Общая стоимость заказа: {order_form.amt}')
-    return '\n\n'.join(result)
+    for row in rows:
+        body.add_row(row, divider=True)
+
+    tail = f'Общая стоимость заказа: {order_form.amt}'
+    return '\n\n'.join(map(lambda s: f'<code>{s}</code>', [body.get_string(), tail]))
 
 
 def position_view(position: MenuPosition) -> str:
-    result = f'{position.name}\nКол-во: {position.quantity}\nСтоимость: {position.quantity * position.cost}'
-    return result
+    body = PrettyTable(field_names=['Наименование', 'Кол-во', 'Стоимость'], padding_width=0)
+    body.add_row(
+        [
+            '\n'.join(map(lambda s: s.strip(), position.name.split())),
+            position.quantity,
+            position.quantity * position.cost
+        ]
+    )
+    return f'<code>{body.get_string()}</code>'
 
 
 def delete_order_view(order_form: ExistOrderForm) -> str:
-    body = PrettyTable(field_names=['Наименование', 'Количество', 'Стоимость'])
-    body.add_rows(
-        [
-            [detail.menu_pos_name, detail.quantity, detail.menu_pos_cost * detail.quantity]
+    body = PrettyTable(field_names=['Наименование', 'Кол-во', 'Стоимость'], padding_width=0)
+    rows = [
+            [
+                '\n'.join(map(lambda s: s.strip(), detail.menu_pos_name.split())),
+                detail.quantity,
+                detail.menu_pos_cost * detail.quantity
+            ]
             for detail in order_form.details
         ]
-    )
-    body_repr = body.get_string()
-    width = int(len(body_repr) / (len(body.rows) + 4))
+    for row in rows:
+        body.add_row(row, divider=True)
 
     head = '\n'.join(
-        [f'Наименование меню: {order_form.menu_name:>{width - 19}}',
-         f'Дата меню: {order_form.menu_date.strftime("%d.%m.%Y"):>{width - 11}}',
-         f'Дата и время создания: {order_form.created_at.strftime("%d.%m.%Y %H:%M:%S"):>{width - 23}}']
+        [f'{order_form.menu_name}\n',
+         f'Дата меню:\n{order_form.menu_date.strftime("%d.%m.%Y")}',
+         f'Дата и время создания:\n{order_form.created_at.strftime("%d.%m.%Y %H:%M:%S")}']
     )
-    tail = f'Общая стоимость заказа: {order_form.amt:>{width - 24}}'
+    tail = f'Общая стоимость заказа: {order_form.amt}'
 
-    return '\n\n'.join(map(lambda s: f'<code>{s}</code>', [head, body_repr, tail]))
+    return '\n\n'.join(map(lambda s: f'<code>{s}</code>', [head, body.get_string(), tail]))
+
+
+if __name__ == '__main__':
+    print('\n'.join('hello'.split()))

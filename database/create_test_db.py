@@ -93,6 +93,21 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                             canteen_id=4
                         )
                     ]
+                ),
+                Customer(
+                    id=30000,
+                    phone_number='+79123737889',
+                    orders=[],
+                    permissions=[
+                        CustomerPermission(
+                            beg_date=datetime.date.today(),
+                            canteen_id=2
+                        ),
+                        CustomerPermission(
+                            beg_date=datetime.date.today(),
+                            canteen_id=4
+                        )
+                    ]
                 )
             ]
             meal_types = [

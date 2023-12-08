@@ -43,7 +43,7 @@ async def order_menu_kb(session: AsyncSession, customer_id: int) -> InlineKeyboa
     builder = InlineKeyboardBuilder()
     for menu in menus:
         builder.button(
-            text=f'{menu.name} на {menu.date}',
+            text=f'{menu.name} на {menu.date.strftime("%d.%m.%Y")}',
             callback_data=MenuCallbackFactory(
                 menu_id=menu.id
             ).pack()
@@ -67,15 +67,15 @@ async def order_positions_kb(session: AsyncSession, menu_id: int):
 def dish_count_kb() -> InlineKeyboardMarkup:
     keyboard = [[
         InlineKeyboardButton(
-            text='-1',
+            text='➖1️⃣',
             callback_data='minus'
         ),
         InlineKeyboardButton(
-            text='Добавить',
+            text='✔ Добавить',
             callback_data=f'add'
         ),
         InlineKeyboardButton(
-            text='+1',
+            text='➕1️⃣',
             callback_data='plus'
         )
     ]]
@@ -86,11 +86,11 @@ def inline_confirm_cancel_kb() -> InlineKeyboardMarkup:
     kb = [
         [
             InlineKeyboardButton(
-                text='Отправить',
+                text='✅ Отправить',
                 callback_data='save'
             ),
             InlineKeyboardButton(
-                text='Отменить',
+                text='❌ Отменить',
                 callback_data='cancel'
             )
         ]
@@ -103,7 +103,7 @@ def delete_order_kb(order_id: int) -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text='Удалить заказ',
+                    text='❌ Удалить заказ',
                     callback_data=OrderCallbackFactory(
                         order_id=order_id
                     ).pack()
@@ -116,7 +116,7 @@ def delete_order_kb(order_id: int) -> InlineKeyboardMarkup:
 def help_chapters_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text='Авторизация', callback_data='auth_help')],
-            [InlineKeyboardButton(text='Работа с заказами', callback_data='order_help')]
+            [InlineKeyboardButton(text='🧍 Авторизация', callback_data='auth_help')],
+            [InlineKeyboardButton(text='🚚 Работа с заказами', callback_data='order_help')]
         ]
     )

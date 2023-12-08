@@ -97,7 +97,7 @@ async def process_get_place(callback: CallbackQuery, state: FSMContext, session:
     await terminate_state_branch(callback.message, state, add_last=False)
 
 
-@router.message(F.text == 'Изменить место доставки', StateFilter(default_state))
+@router.message(F.text.endswith('Изменить место доставки'), StateFilter(default_state))
 async def process_settings(message: Message, session: AsyncSession, state: FSMContext):
     try:
         customer = await get_customer_by_tg_id(session, state, message.from_user.id)

@@ -21,7 +21,7 @@ from presentation.order_views import full_order_view, position_view, delete_orde
 router = Router()
 
 
-@router.message(F.text == 'Сделать новый заказ', StateFilter(default_state))
+@router.message(F.text.endswith('Сделать новый заказ'), StateFilter(default_state))
 async def process_new_order(message: Message, session: AsyncSession, state: FSMContext):
     customer = await get_customer_by_tg_id(session, state, message.from_user.id)
     if customer:
@@ -53,8 +53,8 @@ async def new_order_positions(callback: CallbackQuery, session: AsyncSession, st
         await asyncio.sleep(0.1)
     await state.set_state(NewOrderState.dish_choice)
     cb_msg = await callback.message.answer(
-        text='После добавления блюд нажмите Подтвердить, чтобы сохранить заказ.\n'
-             'Для отмены заказа нажмите Отменить.',
+        text='После добавления блюд нажмите <b><i>Подтвердить</i></b>, чтобы сохранить заказ. '
+             'Для отмены заказа нажмите <b><i>Отменить</i></b>.',
         reply_markup=confirm_cancel_kb()
     )
     await add_message_to_track(cb_msg, state)
@@ -86,7 +86,7 @@ async def add_new_position_to_order(callback: CallbackQuery, session: AsyncSessi
     await callback.message.delete()
 
 
-@router.message(StateFilter(NewOrderState.dish_choice), F.text == 'Подтвердить')
+@router.message(StateFilter(NewOrderState.dish_choice), F.text.endswith('Подтвердить'))
 async def process_order_info(message: Message, session: AsyncSession, state: FSMContext):
     order_form = await set_order_amt(state)
     await state.set_state(NewOrderState.check_status)
@@ -102,7 +102,7 @@ async def process_order_info(message: Message, session: AsyncSession, state: FSM
     await add_message_to_track(msg2, state)
 
 
-@router.message(StateFilter(NewOrderState.dish_choice), F.text == 'Отменить')
+@router.message(StateFilter(NewOrderState.dish_choice), F.text.endswith('Отменить'))
 async def process_cancel_order(message: Message, session: AsyncSession, state: FSMContext):
     await message.answer(
         text='Заполнение заказа отменено',
@@ -137,7 +137,7 @@ async def process_cancel_new_order(callback: CallbackQuery, session: AsyncSessio
     await terminate_state_branch(callback.message, state)
 
 
-@router.message(StateFilter(default_state), F.text == 'Отменить заказ')
+@router.message(StateFilter(default_state), F.text.endswith('Отменить заказ'))
 async def process_delete_order(message: Message, session: AsyncSession, state: FSMContext):
     customer = await get_customer_by_tg_id(session, state, message.from_user.id)
     orders = await get_orders_by_customer(session, customer.id)
@@ -168,7 +168,7 @@ async def process_delete_order(callback: CallbackQuery, session: AsyncSession, s
     await callback.message.delete()
 
 
-@router.message(StateFilter(CancelOrderState.order_choices), F.text == 'Вернуться в главное меню')
+@router.message(StateFilter(CancelOrderState.order_choices), F.text.endswith('Вернуться в главное меню'))
 async def process_back_to_main_menu(message: Message, session: AsyncSession, state: FSMContext):
     await message.answer(
         text='Возврат в главное меню',
