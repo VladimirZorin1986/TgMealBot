@@ -114,14 +114,6 @@ async def create_form_from_order(session: AsyncSession, order: Order) -> ExistOr
     )
 
 
-async def get_order_by_id(
-        session: AsyncSession,
-        callback: CallbackQuery | None = None,
-        order_id: int | None = None) -> Order | None:
-    order_id = order_id or get_id_from_callback(callback)
-    return await session.get(Order, order_id)
-
-
 async def create_order_form(customer: Customer, state: FSMContext) -> None:
     await state.update_data({'order_form': OrderForm(customer_id=customer.id, place_id=customer.place_id)})
 
