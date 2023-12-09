@@ -21,11 +21,14 @@ async def get_valid_menus_by_user(session: AsyncSession, customer_id: CustomerId
     stmt = select(Menu).where(Menu.canteen_id == canteen_id).order_by(Menu.date)
     result = await session.execute(stmt)
     menus = result.scalars()
-    return [menu for menu in menus if await _is_valid_menu(session, menu)]
+    return [menu for menu in menus if await _is_valid_menu(session, menu, customer_id)]
 
 
-async def _is_valid_menu(session: AsyncSession, menu: Menu) -> bool:
-    stmt = select(Order).where(Order.menu_id == menu.id)
+async def _is_valid_menu(session: AsyncSession, menu: Menu, customer_id: CustomerId) -> bool:
+    stmt = select(Order).where(
+        Order.menu_id == menu.id,
+        Order.customer_id == customer_id
+    )
     result = await session.execute(stmt)
     return not (result.scalar_one_or_none()) and (menu.beg_time <= datetime.datetime.now() <= menu.end_time)
 
