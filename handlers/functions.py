@@ -2,10 +2,12 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, default_state
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.user_services import get_customer_from_msg, get_valid_canteens
+from services.user_services import get_customer_from_msg, get_valid_canteens, is_auth
 from services.other_services import add_message_to_track, set_track_callback, get_track_callback, update_track_callback
 from keyboards.inline import show_canteens_kb, show_places_kb
+from keyboards.reply import initial_kb, authorization_kb
 from exceptions import IsNotCustomer, ValidCanteensNotExist
+from presentation.command_views import switch_start_cancel_view
 
 
 async def process_choice_canteens_or_places(
@@ -76,3 +78,17 @@ async def process_choice_delivery_place(
             await update_track_callback(track_cb, callback, state)
     await callback.answer()
 
+
+async def process_switch_base_keyboards(
+        message: Message, state: FSMContext, session: AsyncSession, contact_state: State):
+    if not await is_auth(session, message.from_user.id):
+        await state.set_state(contact_state)
+        msg = await message.answer(
+            text=switch_start_cancel_view(message.text, False),
+            reply_markup=authorization_kb())
+        await add_message_to_track(msg, state)
+    else:
+        await message.answer(
+            text=switch_start_cancel_view(message.text, True),
+            reply_markup=initial_kb()
+        )
