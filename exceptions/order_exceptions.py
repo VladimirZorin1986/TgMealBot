@@ -6,5 +6,9 @@ class InvalidOrderMenu(Exception):
     pass
 
 
+class ValidCanteensNotExist(Exception):
+    pass
+
+
 class ValidMenusNotExist(Exception):
     pass

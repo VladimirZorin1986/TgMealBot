@@ -11,7 +11,7 @@ from services.other_services import (add_message_to_track, get_track_callback, s
                                      update_track_callback, terminate_state_branch)
 from services.user_services import (get_customer_by_phone, update_customer_data, get_customer_by_tg_id,
                                     get_valid_canteens)
-from exceptions import IsNotCustomer
+from exceptions import IsNotCustomer, ValidCanteensNotExist
 
 router = Router()
 
@@ -35,25 +35,32 @@ async def process_auth_with_contact(message: Message, state: FSMContext, session
             )
         await add_message_to_track(msg, state)
     except IsNotCustomer:
-        await state.clear()
         await message.answer(
-            text='Вас нет в списке заказчиков столовой. Обратитесь в поддержку.',
+            text='Вас нет в списке заказчиков столовой.',
+        )
+    except ValidCanteensNotExist:
+        await message.answer(
+            text='У вас истек срок разрешения для заказа еды.'
         )
     finally:
+        await state.clear()
         await message.delete()
 
 
 @router.message(StateFilter(AuthState.get_contact), ~F.contact)
 async def process_auth_no_contact(message: Message):
-    await message.answer('Необходимо дать доступ к контактным данным.'
-                         'Иначе авторизация невозможна.')
+    await message.answer(
+        text='Необходимо дать доступ к контактным данным. '
+             'Иначе авторизация невозможна.'
+    )
 
 
 @router.message(StateFilter(AuthState.get_canteen))
 @router.message(StateFilter(AuthState.get_place))
 async def process_no_canteen(message: Message, session: AsyncSession, state: FSMContext):
     msg = await message.answer(
-        text='Для продолжения авторизации необходимо следовать инструкции'
+        text='Для продолжения авторизации необходимо следовать инструкции. '
+             'Если хотите отменить это действие нажмите на команду /cancel'
     )
     await add_message_to_track(msg, state)
 
@@ -87,7 +94,7 @@ async def process_get_canteen(callback: CallbackQuery, state: FSMContext, sessio
 async def process_get_place(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
     await update_customer_data(session, callback, state)
     await callback.message.answer(
-        text='Готов принять ваш первый заказ.',
+        text='Теперь вы можете сделать заказ.',
         reply_markup=initial_kb()
     )
     await callback.answer(

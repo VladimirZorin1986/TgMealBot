@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 from utils.service_functions import get_id_from_callback
-from exceptions import IsNotCustomer
+from exceptions import IsNotCustomer, ValidCanteensNotExist
 
 
 async def _get_canteens(session: AsyncSession) -> ScalarResult[Canteen]:
@@ -23,7 +23,10 @@ async def get_valid_canteens(session: AsyncSession, customer: Customer) -> list[
     canteens = await _get_canteens(session)
     valid_canteen_ids = set(permission.canteen_id for permission in customer.permissions
                             if _is_valid_permission(permission))
-    return [canteen for canteen in canteens if canteen.id in valid_canteen_ids]
+    valid_canteens = [canteen for canteen in canteens if canteen.id in valid_canteen_ids]
+    if valid_canteens:
+        return valid_canteens
+    raise ValidCanteensNotExist
 
 
 async def get_places_by_canteen(session: AsyncSession, canteen: Canteen) -> ScalarResult[DeliveryPlace]:

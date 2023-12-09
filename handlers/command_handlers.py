@@ -30,6 +30,14 @@ async def process_start_command(message: Message, state: FSMContext, session: As
         )
 
 
+@router.message(CommandStart(), ~StateFilter(default_state))
+async def process_start_with_context(message: Message, state: FSMContext):
+    await message.answer(
+        text='Вы не закончили выполняемое действие. '
+             'Закончите или нажмите на команду /cancel для отмены.'
+    )
+
+
 @router.message(Command('help'))
 async def process_help_command(message: Message):
     await message.answer(
@@ -47,6 +55,18 @@ async def process_auth_help(callback: CallbackQuery):
 
 
 @router.message(Command('cancel'), ~StateFilter(default_state))
-async def process_global_cancel_command(message: Message, state: FSMContext):
+async def process_cancel_with_context(message: Message, state: FSMContext):
     await terminate_state_branch(message, state, add_last=False)
+    await message.answer(
+        text='Действие отменено. Возврат в главное меню',
+        reply_markup=initial_kb()
+    )
+
+
+@router.message(Command('cancel'), StateFilter(default_state))
+async def process_cancel_without_context(message: Message):
+    await message.answer(
+        text='Вы не находитесь в состоянии выполнения действия. '
+             'Нажмите на команду /start для возврата в главное меню.'
+    )
 
