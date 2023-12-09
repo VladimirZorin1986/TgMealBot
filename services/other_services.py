@@ -38,7 +38,7 @@ async def update_track_callback(track_cb: TrackCallback, callback: CallbackQuery
     await state.update_data(cb=track_cb)
 
 
-async def erase_track_messages(state: FSMContext, bot: Bot, chat_id: int) -> None:
+async def _erase_track_messages(state: FSMContext, bot: Bot, chat_id: int) -> None:
     data: dict[str, Any] = await state.get_data()
     track_msgs = data.get('track_messages')
     if track_msgs:
@@ -50,7 +50,7 @@ async def erase_track_messages(state: FSMContext, bot: Bot, chat_id: int) -> Non
 async def terminate_state_branch(message: Message, state: FSMContext, add_last: bool = True) -> None:
     if add_last:
         await add_message_to_track(message, state)
-    await erase_track_messages(state, message.bot, message.chat.id)
+    await _erase_track_messages(state, message.bot, message.chat.id)
     await state.clear()
 
 
