@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from utils.service_models import CustomerId, MenuId, MenuPosId, OrderForm, ExistOrderForm, DetailForm
 from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail
-from exceptions import InvalidPositionQuantity, InvalidOrderMenu
+from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist
 from utils.service_functions import get_id_from_callback
 
 
@@ -21,7 +21,10 @@ async def get_valid_menus_by_user(session: AsyncSession, customer_id: CustomerId
     stmt = select(Menu).where(Menu.canteen_id == canteen_id).order_by(Menu.date)
     result = await session.execute(stmt)
     menus = result.scalars()
-    return [menu for menu in menus if await _is_valid_menu(session, menu, customer_id)]
+    valid_menus = [menu for menu in menus if await _is_valid_menu(session, menu, customer_id)]
+    if valid_menus:
+        return valid_menus
+    raise ValidMenusNotExist
 
 
 async def _is_valid_menu(session: AsyncSession, menu: Menu, customer_id: CustomerId) -> bool:
@@ -54,7 +57,7 @@ async def get_menu_position_by_id(session: AsyncSession, menu_pos_id: MenuPosId)
 async def confirm_pending_order(session: AsyncSession, state: FSMContext) -> None:
     order_form = await get_order_form(state)
     menu = await get_menu_by_id(session, order_form.menu_id)
-    if _is_valid_menu(session, menu):
+    if _is_valid_menu(session, menu, order_form.customer_id):
         order = await create_order_from_form(order_form)
         session.add(order)
         await session.commit()

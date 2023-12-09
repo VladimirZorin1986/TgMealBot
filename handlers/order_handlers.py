@@ -14,7 +14,7 @@ from services.order_services import (get_menu_positions, get_order_by_id,
                                      get_orders_by_customer, delete_order, create_order_form,
                                      remember_position, set_order_amt, add_position_to_order_form,
                                      confirm_pending_order, increment_position_qty, create_form_from_order)
-from exceptions import InvalidPositionQuantity, InvalidOrderMenu
+from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist, IsNotCustomer
 from presentation.order_views import full_order_view, position_view, delete_order_view
 
 
@@ -23,8 +23,8 @@ router = Router()
 
 @router.message(F.text.endswith('Сделать новый заказ'), StateFilter(default_state))
 async def process_new_order(message: Message, session: AsyncSession, state: FSMContext):
-    customer = await get_customer_by_tg_id(session, state, message.from_user.id)
-    if customer:
+    try:
+        customer = await get_customer_by_tg_id(session, state, message.from_user.id)
         msg = await message.answer(
             text='Выберите меню для заказа:',
             reply_markup=await order_menu_kb(session, customer_id=customer.id)
@@ -32,7 +32,11 @@ async def process_new_order(message: Message, session: AsyncSession, state: FSMC
         await add_message_to_track(msg, state)
         await create_order_form(customer, state)
         await state.set_state(NewOrderState.menu_choice)
-    else:
+    except ValidMenusNotExist:
+        await message.answer(
+            text='Нет доступных меню для заказа'
+        )
+    except IsNotCustomer:
         await message.answer(
             text='Вас больше нет в списке заказчиков. Пройдите повторную авторизацию.'
                  'Для этого выберите в меню команду /start',
@@ -50,7 +54,7 @@ async def new_order_positions(callback: CallbackQuery, session: AsyncSession, st
         )
         await add_message_to_track(msg, state)
         await remember_position(msg, state, position)
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
     await state.set_state(NewOrderState.dish_choice)
     cb_msg = await callback.message.answer(
         text='После добавления блюд нажмите <b><i>Подтвердить</i></b>, чтобы сохранить заказ. '
@@ -104,11 +108,11 @@ async def process_order_info(message: Message, session: AsyncSession, state: FSM
 
 @router.message(StateFilter(NewOrderState.dish_choice), F.text.endswith('Отменить'))
 async def process_cancel_order(message: Message, session: AsyncSession, state: FSMContext):
-    await message.answer(
-        text='Заполнение заказа отменено',
-        reply_markup=ReplyKeyboardRemove()
-    )
     await terminate_state_branch(message, state, add_last=False)
+    await message.answer(
+        text='Возврат в главное меню',
+        reply_markup=initial_kb()
+    )
 
 
 @router.callback_query(StateFilter(NewOrderState.check_status), F.data == 'save')
@@ -126,6 +130,10 @@ async def process_pending_new_order(callback: CallbackQuery, session: AsyncSessi
         )
     finally:
         await terminate_state_branch(callback.message, state)
+        await callback.message.answer(
+            text='Возврат в главное меню',
+            reply_markup=initial_kb()
+        )
 
 
 @router.callback_query(StateFilter(NewOrderState.check_status), F.data == 'cancel')
@@ -135,25 +143,37 @@ async def process_cancel_new_order(callback: CallbackQuery, session: AsyncSessio
         show_alert=True
     )
     await terminate_state_branch(callback.message, state)
+    await callback.message.answer(
+        text='Возврат в главное меню',
+        reply_markup=initial_kb()
+    )
 
 
 @router.message(StateFilter(default_state), F.text.endswith('Отменить заказ'))
 async def process_delete_order(message: Message, session: AsyncSession, state: FSMContext):
-    customer = await get_customer_by_tg_id(session, state, message.from_user.id)
-    orders = await get_orders_by_customer(session, customer.id)
-    for order in orders:
-        order_form = await create_form_from_order(session, order)
-        msg = await message.answer(
-            text=delete_order_view(order_form),
-            reply_markup=delete_order_kb(order.id)
+    try:
+        customer = await get_customer_by_tg_id(session, state, message.from_user.id)
+        orders = await get_orders_by_customer(session, customer.id)
+        for order in orders:
+            order_form = await create_form_from_order(session, order)
+            msg = await message.answer(
+                text=delete_order_view(order_form),
+                reply_markup=delete_order_kb(order.id)
+            )
+            await add_message_to_track(msg, state)
+            await state.update_data({str(msg.message_id): order})
+        await state.set_state(CancelOrderState.order_choices)
+        await message.answer(
+            text='Для возвращения в главное меню, после удаления выбранных заказов, нажмите на кнопку '
+                 '<b><i>Вернуться в главное меню</i></b>',
+            reply_markup=back_to_initial_kb()
         )
-        await add_message_to_track(msg, state)
-        await state.update_data({str(msg.message_id): order})
-    await state.set_state(CancelOrderState.order_choices)
-    await message.answer(
-        text='Для возвращения в главное меню, после удаления выбранных заказов, нажмите на кнопку',
-        reply_markup=back_to_initial_kb()
-    )
+    except IsNotCustomer:
+        await message.answer(
+            text='Вас больше нет в списке заказчиков. Пройдите повторную авторизацию.'
+                 'Для этого выберите в меню команду /start',
+            reply_markup=ReplyKeyboardRemove()
+        )
 
 
 @router.callback_query(StateFilter(CancelOrderState.order_choices), F.data.startswith('order'))

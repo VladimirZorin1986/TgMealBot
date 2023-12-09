@@ -4,3 +4,7 @@ class InvalidPositionQuantity(Exception):
 
 class InvalidOrderMenu(Exception):
     pass
+
+
+class ValidMenusNotExist(Exception):
+    pass
