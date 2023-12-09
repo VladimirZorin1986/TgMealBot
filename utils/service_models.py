@@ -42,6 +42,8 @@ class ExistOrderForm:
     order_id: int
     created_at: datetime.datetime
     amt: Decimal
+    canteen_name: str
+    place_name: str
     menu_name: str
     menu_date: datetime.date
     details: list[DetailForm]

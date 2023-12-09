@@ -8,6 +8,7 @@ from utils.service_models import CustomerId, MenuId, MenuPosId, OrderForm, Exist
 from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail
 from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist
 from utils.service_functions import get_id_from_callback
+from services.user_services import get_canteen_by_id
 
 
 async def _get_canteen_id_by_user(session: AsyncSession, customer_id: CustomerId):
@@ -94,6 +95,8 @@ async def create_order_from_form(order_form: OrderForm) -> Order:
 
 async def create_form_from_order(session: AsyncSession, order: Order) -> ExistOrderForm:
     menu = await get_menu_by_id(session, order.menu_id)
+    place = await get_place_by_id(session, order.place_id)
+    canteen = await get_canteen_by_id(session, place.canteen_id)
     details = []
     for order_detail in order.details:
         menu_pos = await get_menu_position_by_id(session, order_detail.menu_pos_id)
@@ -110,10 +113,16 @@ async def create_form_from_order(session: AsyncSession, order: Order) -> ExistOr
         order_id=order.id,
         created_at=order.created_at,
         amt=order.amt,
+        canteen_name=canteen.name,
+        place_name=place.name,
         menu_name=menu.name,
         menu_date=menu.date,
         details=details
     )
+
+
+async def get_place_by_id(session: AsyncSession, place_id: int) -> DeliveryPlace | None:
+    return await session.get(DeliveryPlace, place_id)
 
 
 async def get_order_by_id(

@@ -48,12 +48,9 @@ def delete_order_view(order_form: ExistOrderForm) -> str:
     head = '\n'.join(
         [f'{order_form.menu_name}\n',
          f'Дата меню:\n{order_form.menu_date.strftime("%d.%m.%Y")}',
-         f'Дата и время создания:\n{order_form.created_at.strftime("%d.%m.%Y %H:%M:%S")}']
+         f'Дата и время создания:\n{order_form.created_at.strftime("%d.%m.%Y %H:%M:%S")}',
+         f'Место доставки:\n{order_form.place_name} ({order_form.canteen_name})']
     )
     tail = f'Общая стоимость заказа: {order_form.amt}'
 
     return '\n\n'.join(map(lambda s: f'<code>{s}</code>', [head, body.get_string(), tail]))
-
-
-if __name__ == '__main__':
-    print('\n'.join('hello'.split()))
