@@ -4,11 +4,11 @@ from sqlalchemy import select, ScalarResult
 from sqlalchemy.orm import selectinload
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
-from utils.service_models import CustomerId, MenuId, MenuPosId, OrderForm, ExistOrderForm, DetailForm
-from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail
+from utils.service_models import CustomerId, MenuId, OrderForm, ExistOrderForm, DetailForm
+from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail, Canteen
 from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist
 from utils.service_functions import get_id_from_callback
-from services.user_services import get_canteen_by_id
+from database.functions import get_obj_by_id
 
 
 async def _get_canteen_id_by_user(session: AsyncSession, customer_id: CustomerId):
@@ -50,14 +50,9 @@ async def get_menu_positions(
     return await get_menu_positions_by_menu(session, menu_id)
 
 
-async def get_menu_position_by_id(session: AsyncSession, menu_pos_id: MenuPosId) -> MenuPosition | None:
-    position = await session.get(MenuPosition, menu_pos_id)
-    return position
-
-
 async def confirm_pending_order(session: AsyncSession, state: FSMContext) -> None:
     order_form = await get_order_form(state)
-    menu = await get_menu_by_id(session, order_form.menu_id)
+    menu = await get_obj_by_id(session, Menu, order_form.menu_id)
     if _is_valid_menu(session, menu, order_form.customer_id):
         order = await create_order_from_form(order_form)
         session.add(order)
@@ -77,11 +72,6 @@ async def get_orders_by_customer(session: AsyncSession, customer_id: CustomerId)
     return result.scalars()
 
 
-async def get_menu_by_id(session: AsyncSession, menu_id: MenuId) -> Menu | None:
-    menu = await session.get(Menu, menu_id)
-    return menu
-
-
 async def create_order_from_form(order_form: OrderForm) -> Order:
     return Order(
         created_at=datetime.datetime.now(),
@@ -94,12 +84,12 @@ async def create_order_from_form(order_form: OrderForm) -> Order:
 
 
 async def create_form_from_order(session: AsyncSession, order: Order) -> ExistOrderForm:
-    menu = await get_menu_by_id(session, order.menu_id)
-    place = await get_place_by_id(session, order.place_id)
-    canteen = await get_canteen_by_id(session, place.canteen_id)
+    menu = await get_obj_by_id(session, Menu, order.menu_id)
+    place = await get_obj_by_id(session, DeliveryPlace, order.place_id)
+    canteen = await get_obj_by_id(session, Canteen, place.canteen_id)
     details = []
     for order_detail in order.details:
-        menu_pos = await get_menu_position_by_id(session, order_detail.menu_pos_id)
+        menu_pos = await get_obj_by_id(session, MenuPosition, order_detail.menu_pos_id)
         details.append(
             DetailForm(
                 detail_id=order_detail.id,
@@ -119,10 +109,6 @@ async def create_form_from_order(session: AsyncSession, order: Order) -> ExistOr
         menu_date=menu.date,
         details=details
     )
-
-
-async def get_place_by_id(session: AsyncSession, place_id: int) -> DeliveryPlace | None:
-    return await session.get(DeliveryPlace, place_id)
 
 
 async def get_order_by_id(

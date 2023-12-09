@@ -6,13 +6,8 @@ from sqlalchemy.orm import selectinload
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 from utils.service_functions import get_id_from_callback
+from database.functions import get_obj_by_id, get_objs_by_cls
 from exceptions import IsNotCustomer, ValidCanteensNotExist
-
-
-async def _get_canteens(session: AsyncSession) -> ScalarResult[Canteen]:
-    stmt = select(Canteen)
-    canteens = await session.execute(stmt)
-    return canteens.scalars()
 
 
 async def get_canteen_by_id(session: AsyncSession, canteen_id: int) -> Canteen | None:
@@ -20,7 +15,7 @@ async def get_canteen_by_id(session: AsyncSession, canteen_id: int) -> Canteen |
 
 
 async def get_valid_canteens(session: AsyncSession, customer: Customer) -> list[Canteen]:
-    canteens = await _get_canteens(session)
+    canteens = await get_objs_by_cls(session, Canteen)
     valid_canteen_ids = set(permission.canteen_id for permission in customer.permissions
                             if _is_valid_permission(permission))
     valid_canteens = [canteen for canteen in canteens if canteen.id in valid_canteen_ids]
@@ -112,7 +107,7 @@ if __name__ == '__main__':
         async_session = async_sessionmaker(engine, expire_on_commit=False)
 
         async with async_session() as session:
-            canteens = await _get_canteens(session)
+            canteens = await get_objs_by_cls(session, Canteen)
             for canteen in canteens:
                 print(f'{canteen.id} {canteen.name}')
 

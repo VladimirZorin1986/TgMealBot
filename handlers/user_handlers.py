@@ -35,15 +35,16 @@ async def process_auth_with_contact(message: Message, state: FSMContext, session
             )
         await add_message_to_track(msg, state)
     except IsNotCustomer:
+        await state.clear()
         await message.answer(
             text='Вас нет в списке заказчиков столовой.',
         )
     except ValidCanteensNotExist:
+        await state.clear()
         await message.answer(
             text='У вас истек срок разрешения для заказа еды.'
         )
     finally:
-        await state.clear()
         await message.delete()
 
 
@@ -111,16 +112,17 @@ async def process_settings(message: Message, session: AsyncSession, state: FSMCo
         valid_canteens = await get_valid_canteens(session, customer)
         if len(valid_canteens) > 1:
             await state.set_state(AuthState.get_canteen)
-            await message.answer(
+            msg = await message.answer(
                 text='Выберите столовую:',
                 reply_markup=show_canteens_kb(valid_canteens)
             )
         else:
             await state.set_state(AuthState.get_place)
-            await message.answer(
+            msg = await message.answer(
                 text='Выберите новое место доставки:',
                 reply_markup=await show_places_kb(session, *valid_canteens)
             )
+        await add_message_to_track(msg, state)
     except IsNotCustomer:
         await message.answer(
             text='Вас больше нет в списке заказчиков. Вам необходимо заново пройти авторизацию.',
