@@ -12,3 +12,7 @@ class ValidCanteensNotExist(Exception):
 
 class ValidMenusNotExist(Exception):
     pass
+
+
+class ValidOrdersNotExist(Exception):
+    pass

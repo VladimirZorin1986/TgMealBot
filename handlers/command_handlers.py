@@ -55,12 +55,19 @@ async def process_auth_help(callback: CallbackQuery):
 
 
 @router.message(Command('cancel'), ~StateFilter(default_state))
-async def process_cancel_with_context(message: Message, state: FSMContext):
+async def process_cancel_with_context(message: Message, session: AsyncSession, state: FSMContext):
     await terminate_state_branch(message, state, add_last=False)
-    await message.answer(
-        text='Действие отменено. Возврат в главное меню',
-        reply_markup=initial_kb()
-    )
+    if not await is_auth(session, message.from_user.id):
+        await state.set_state(AuthState.get_contact)
+        await message.answer(
+            text='Действие отменено. Вы не авторизованы в системе',
+            reply_markup=authorization_kb()
+        )
+    else:
+        await message.answer(
+            text='Действие отменено. Возврат в главное меню',
+            reply_markup=initial_kb()
+        )
 
 
 @router.message(Command('cancel'), StateFilter(default_state))

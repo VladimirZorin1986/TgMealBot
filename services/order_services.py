@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from utils.service_models import CustomerId, MenuId, OrderForm, ExistOrderForm, DetailForm
 from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail, Canteen
-from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist
+from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist, ValidOrdersNotExist
 from utils.service_functions import get_id_from_callback
 from database.functions import get_obj_by_id
 
@@ -66,10 +66,13 @@ async def delete_order(session: AsyncSession, order: Order) -> None:
     await session.commit()
 
 
-async def get_orders_by_customer(session: AsyncSession, customer_id: CustomerId) -> ScalarResult[Order]:
+async def get_orders_by_customer(session: AsyncSession, customer_id: CustomerId) -> list[Order]:
     stmt = select(Order).where(Order.customer_id == customer_id).options(selectinload(Order.details))
     result = await session.execute(stmt)
-    return result.scalars()
+    orders = [order for order in result.scalars() if not order.sent_to_eis]
+    if orders:
+        return orders
+    raise ValidOrdersNotExist
 
 
 async def create_order_from_form(order_form: OrderForm) -> Order:

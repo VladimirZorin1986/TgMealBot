@@ -145,6 +145,7 @@ class Order(Base):
         Numeric(precision=10, scale=2, asdecimal=True),
         nullable=True
     )
+    sent_to_eis: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
     customer_id: Mapped[int] = mapped_column(
         ForeignKey('customer.id', ondelete='CASCADE')
     )

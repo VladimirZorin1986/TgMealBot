@@ -14,7 +14,7 @@ from services.order_services import (get_menu_positions, get_order_by_id,
                                      get_orders_by_customer, delete_order, create_order_form,
                                      remember_position, set_order_amt, add_position_to_order_form,
                                      confirm_pending_order, increment_position_qty, create_form_from_order)
-from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist, IsNotCustomer
+from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist, IsNotCustomer, ValidOrdersNotExist
 from presentation.order_views import full_order_view, position_view, delete_order_view
 
 
@@ -54,7 +54,7 @@ async def new_order_positions(callback: CallbackQuery, session: AsyncSession, st
         )
         await add_message_to_track(msg, state)
         await remember_position(msg, state, position)
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.3)
     await state.set_state(NewOrderState.dish_choice)
     cb_msg = await callback.message.answer(
         text='После добавления блюд нажмите <b><i>Подтвердить</i></b>, чтобы сохранить заказ. '
@@ -173,6 +173,11 @@ async def process_delete_order(message: Message, session: AsyncSession, state: F
             text='Вас больше нет в списке заказчиков. Пройдите повторную авторизацию.'
                  'Для этого выберите в меню команду /start',
             reply_markup=ReplyKeyboardRemove()
+        )
+    except ValidOrdersNotExist:
+        await message.answer(
+            text='У вас нет активных заказов для удаления.',
+            reply_markup=initial_kb()
         )
 
 
