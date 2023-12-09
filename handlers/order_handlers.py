@@ -9,14 +9,12 @@ from keyboards.inline import order_menu_kb, dish_count_kb, inline_confirm_cancel
 from keyboards.reply import confirm_cancel_kb, back_to_initial_kb, initial_kb
 from states.order_states import NewOrderState, CancelOrderState
 from services.other_services import add_message_to_track, terminate_state_branch
-from services.user_services import get_customer_by_tg_id
-from services.order_services import (get_menu_positions, get_order_by_id,
-                                     get_orders_by_customer, delete_order, create_order_form,
+from services.user_services import get_customer_from_msg
+from services.order_services import (get_menu_positions, get_orders_by_customer, delete_order, create_order_form,
                                      remember_position, set_order_amt, add_position_to_order_form,
                                      confirm_pending_order, increment_position_qty, create_form_from_order)
 from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist, IsNotCustomer, ValidOrdersNotExist
 from presentation.order_views import full_order_view, position_view, delete_order_view
-
 
 router = Router()
 
@@ -24,7 +22,7 @@ router = Router()
 @router.message(F.text.endswith('Сделать новый заказ'), StateFilter(default_state))
 async def process_new_order(message: Message, session: AsyncSession, state: FSMContext):
     try:
-        customer = await get_customer_by_tg_id(session, state, message.from_user.id)
+        customer = await get_customer_from_msg(session, state, message)
         msg = await message.answer(
             text='Выберите меню для заказа:',
             reply_markup=await order_menu_kb(session, customer_id=customer.id)
@@ -34,7 +32,8 @@ async def process_new_order(message: Message, session: AsyncSession, state: FSMC
         await state.set_state(NewOrderState.menu_choice)
     except ValidMenusNotExist:
         await message.answer(
-            text='Нет доступных меню для заказа'
+            text='Нет доступных меню для заказа',
+            reply_markup=initial_kb()
         )
     except IsNotCustomer:
         await message.answer(
@@ -152,7 +151,7 @@ async def process_cancel_new_order(callback: CallbackQuery, session: AsyncSessio
 @router.message(StateFilter(default_state), F.text.endswith('Отменить заказ'))
 async def process_delete_order(message: Message, session: AsyncSession, state: FSMContext):
     try:
-        customer = await get_customer_by_tg_id(session, state, message.from_user.id)
+        customer = await get_customer_from_msg(session, state, message)
         orders = await get_orders_by_customer(session, customer.id)
         for order in orders:
             order_form = await create_form_from_order(session, order)

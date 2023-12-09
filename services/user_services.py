@@ -3,7 +3,7 @@ from database.models import Customer, Canteen, DeliveryPlace, CustomerPermission
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, ScalarResult
 from sqlalchemy.orm import selectinload
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 from utils.service_functions import get_id_from_callback
 from database.functions import get_obj_by_id, get_objs_by_cls
@@ -30,9 +30,13 @@ async def get_places_by_canteen(session: AsyncSession, canteen: Canteen) -> Scal
     return places.scalars()
 
 
-async def get_customer_by_phone(session: AsyncSession, state: FSMContext, phone_number: str) -> Customer:
-    phone_number = phone_number if len(phone_number) == 12 else f'+{phone_number}'
-    stmt = select(Customer).where(Customer.phone_number == phone_number).options(selectinload(Customer.permissions))
+async def get_customer_from_msg(session: AsyncSession, state: FSMContext, message: Message) -> Customer:
+    if message.contact:
+        raw_phone_number = message.contact.phone_number
+        phone_number = raw_phone_number if len(raw_phone_number) == 12 else f'+{raw_phone_number}'
+        stmt = select(Customer).where(Customer.phone_number == phone_number).options(selectinload(Customer.permissions))
+    else:
+        stmt = select(Customer).where(Customer.tg_id == message.from_user.id).options(selectinload(Customer.permissions))
     result = await session.execute(stmt)
     customer = result.scalar_one_or_none()
     if customer and _is_valid_customer(customer):
@@ -87,10 +91,6 @@ async def update_customer_data(session: AsyncSession, callback: CallbackQuery, s
     )
 
 
-async def get_customer_by_id(session: AsyncSession, customer_id: int) -> Customer | None:
-    return await session.get(entity=Customer, ident=customer_id)
-
-
 if __name__ == '__main__':
     import asyncio
     from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -106,19 +106,19 @@ if __name__ == '__main__':
         # expire_on_commit - don't expire objects after transaction commit
         async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-        async with async_session() as session:
-            canteens = await get_objs_by_cls(session, Canteen)
-            for canteen in canteens:
-                print(f'{canteen.id} {canteen.name}')
-
-            places = await get_places_by_canteen(session, 1)
-            for place in places:
-                print(f'{place.id} {place.name}')
-
-            is_emp1 = await get_customer_by_phone(session, '+79856254915')
-            print(is_emp1.id)
-            is_emp2 = await get_customer_by_phone(session, '+79851310741')
-            print(is_emp2)
+        # async with async_session() as session:
+        #     canteens = await get_objs_by_cls(session, Canteen)
+        #     for canteen in canteens:
+        #         print(f'{canteen.id} {canteen.name}')
+        #
+        #     places = await get_places_by_canteen(session, 1)
+        #     for place in places:
+        #         print(f'{place.id} {place.name}')
+        #
+        #     is_emp1 = await get_customer_by_phone(session, '+79856254915')
+        #     print(is_emp1.id)
+        #     is_emp2 = await get_customer_by_phone(session, '+79851310741')
+        #     print(is_emp2)
 
         # for AsyncEngine created in function scope, close and
         # clean-up pooled connections
