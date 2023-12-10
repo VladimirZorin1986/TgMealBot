@@ -11,7 +11,7 @@ from states.order_states import NewOrderState, CancelOrderState
 from services.other_services import add_message_to_track, terminate_state_branch
 from services.user_services import get_customer_from_msg
 from services.order_services import (get_menu_positions, get_orders_by_customer, delete_order, create_order_form,
-                                     remember_position, set_order_amt, add_position_to_order_form,
+                                     remember_position, set_order_amt, add_position_to_order_form, get_valid_menus_by_user,
                                      confirm_pending_order, increment_position_qty, create_form_from_order)
 from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist, IsNotCustomer, ValidOrdersNotExist
 from presentation.order_views import full_order_view, position_view, delete_order_view
@@ -23,9 +23,10 @@ router = Router()
 async def process_new_order(message: Message, session: AsyncSession, state: FSMContext):
     try:
         customer = await get_customer_from_msg(session, state, message)
+        menus = await get_valid_menus_by_user(session, customer.id)
         msg = await message.answer(
             text='Выберите меню для заказа:',
-            reply_markup=await order_menu_kb(session, customer_id=customer.id)
+            reply_markup=order_menu_kb(menus)
         )
         await add_message_to_track(msg, state)
         await create_order_form(customer, state)

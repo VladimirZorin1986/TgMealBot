@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.models import Canteen
+from database.models import Canteen, Menu
 from utils.service_functions import get_id_from_callback
 from services.user_services import get_places_by_canteen, get_canteen_by_id
 from services.order_services import get_valid_menus_by_user, get_menu_positions_by_menu
@@ -38,27 +38,13 @@ async def show_places_kb(
     return builder.adjust(1).as_markup()
 
 
-async def order_menu_kb(session: AsyncSession, customer_id: int) -> InlineKeyboardMarkup:
-    menus = await get_valid_menus_by_user(session, customer_id)
+def order_menu_kb(menus: list[Menu]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for menu in menus:
         builder.button(
             text=f'{menu.name} на {menu.date.strftime("%d.%m.%Y")}',
             callback_data=MenuCallbackFactory(
                 menu_id=menu.id
-            ).pack()
-        )
-    return builder.adjust(1).as_markup()
-
-
-async def order_positions_kb(session: AsyncSession, menu_id: int):
-    positions = await get_menu_positions_by_menu(session, menu_id)
-    builder = InlineKeyboardBuilder()
-    for position in positions:
-        builder.button(
-            text=f'{position.name}',
-            callback_data=PositionCallbackFactory(
-                position_id=position.id
             ).pack()
         )
     return builder.adjust(1).as_markup()

@@ -4,8 +4,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.enums.parse_mode import ParseMode
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from config import load_config, on_startup
-from middleware import DbSessionMiddleware
-from keyboards.main_menu import set_main_menu
+from middlewares import DbSessionMiddleware
 from handlers.user_handlers import router as user_router
 from handlers.order_handlers import router as order_router
 from handlers.other_handlers import router as other_router
