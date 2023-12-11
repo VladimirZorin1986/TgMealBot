@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from services.user_services import get_customer_from_msg
 from utils.service_models import CustomerId, MenuId, OrderForm, ExistOrderForm, DetailForm, NewOrderForm, ServiceManager
 from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail, Canteen
-from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist, ValidOrdersNotExist
+from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist, ValidOrdersNotExist, NoPositionsSelected
 from utils.service_functions import get_id_from_callback
 from database.functions import get_obj_by_id
 
@@ -181,10 +181,13 @@ async def add_position_to_order_form(callback: CallbackQuery, state: FSMContext)
 
 async def set_order_amt(state: FSMContext):
     order_form = await get_order_form(state)
-    amt = sum(detail.quantity * cost for (_, cost), detail in order_form.details.items())
-    order_form.amt = amt
-    await state.update_data(order_form=order_form)
-    return order_form
+    if order_form.details:
+        amt = sum(detail.quantity * cost for (_, cost), detail in order_form.details.items())
+        order_form.amt = amt
+        await state.update_data(order_form=order_form)
+        return order_form
+    else:
+        raise NoPositionsSelected
 
 
 async def add_menu_id_to_order_form(menu_id: MenuId, state: FSMContext) -> None:

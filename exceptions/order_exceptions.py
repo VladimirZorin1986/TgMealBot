@@ -16,3 +16,7 @@ class ValidMenusNotExist(Exception):
 
 class ValidOrdersNotExist(Exception):
     pass
+
+
+class NoPositionsSelected(Exception):
+    pass

@@ -13,7 +13,8 @@ from services.user_services import get_customer_from_msg
 from services.order_services import (get_menu_positions, get_orders_by_customer, delete_order, create_order_form,
                                      remember_position, set_order_amt, add_position_to_order_form, get_valid_menus_by_user,
                                      confirm_pending_order, increment_position_qty, create_form_from_order)
-from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist, IsNotCustomer, ValidOrdersNotExist
+from exceptions import (InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist, IsNotCustomer,
+                        ValidOrdersNotExist, NoPositionsSelected)
 from presentation.order_views import full_order_view, position_view, delete_order_view
 
 router = Router()
@@ -92,18 +93,25 @@ async def add_new_position_to_order(callback: CallbackQuery, session: AsyncSessi
 
 @router.message(StateFilter(NewOrderState.dish_choice), F.text.endswith('Подтвердить'))
 async def process_order_info(message: Message, session: AsyncSession, state: FSMContext):
-    order_form = await set_order_amt(state)
-    await state.set_state(NewOrderState.check_status)
-    msg1 = await message.answer(
-        text='Проверьте свой заказ:',
-        reply_markup=ReplyKeyboardRemove()
-    )
-    await add_message_to_track(msg1, state)
-    msg2 = await message.answer(
-        text=full_order_view(order_form),
-        reply_markup=inline_confirm_cancel_kb()
-    )
-    await add_message_to_track(msg2, state)
+    try:
+        order_form = await set_order_amt(state)
+        await state.set_state(NewOrderState.check_status)
+        msg1 = await message.answer(
+            text='Проверьте свой заказ:',
+            reply_markup=ReplyKeyboardRemove()
+        )
+        await add_message_to_track(msg1, state)
+        msg2 = await message.answer(
+            text=full_order_view(order_form),
+            reply_markup=inline_confirm_cancel_kb()
+        )
+        await add_message_to_track(msg2, state)
+    except NoPositionsSelected:
+        await message.answer(
+            text='Вы не выбрали ни одной позиции для заказа. '
+                 'Выберите необходимые позиции или отмените заполнение заказа с помощью кнопки <b><i>Отменить</i></b>',
+            reply_markup=confirm_cancel_kb()
+        )
 
 
 @router.message(StateFilter(NewOrderState.dish_choice), F.text.endswith('Отменить'))
