@@ -20,3 +20,7 @@ class ValidOrdersNotExist(Exception):
 
 class NoPositionsSelected(Exception):
     pass
+
+
+class InvalidOrder(Exception):
+    pass

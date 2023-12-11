@@ -4,49 +4,11 @@ from sqlalchemy import select, ScalarResult
 from sqlalchemy.orm import selectinload
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
-
-from services.user_services import get_customer_from_msg
-from utils.service_models import CustomerId, MenuId, OrderForm, ExistOrderForm, DetailForm, NewOrderForm, ServiceManager
+from utils.service_models import CustomerId, MenuId, OrderForm, ExistOrderForm, DetailForm
 from database.models import Customer, DeliveryPlace, Menu, MenuPosition, Order, OrderDetail, Canteen
 from exceptions import InvalidPositionQuantity, InvalidOrderMenu, ValidMenusNotExist, ValidOrdersNotExist, NoPositionsSelected
 from utils.service_functions import get_id_from_callback
 from database.functions import get_obj_by_id
-
-
-class OrderManager(ServiceManager):
-
-    def __init__(self):
-        super().__init__(NewOrderForm())
-
-    async def start_process_new_order(
-            self, session: AsyncSession, state: FSMContext, message: Message) -> None:
-        customer = await get_customer_from_msg(session, message)
-        place = await get_obj_by_id(session, DeliveryPlace, customer.place_id)
-        canteen = await get_obj_by_id(session, Canteen, place.canteen_id)
-        self.set_attrs(
-            customer_id=customer.id,
-            canteen_id=canteen.id,
-            canteen_name=canteen.name,
-            place_id=place.id,
-            place_name=place.name
-        )
-        await self.save(state)
-
-    async def receive_valid_menus(self, session: AsyncSession) -> list[Menu]:
-        return await get_valid_menus_by_user(session, self.get_attr('customer_id'))
-
-    async def process_set_order_menu(
-            self, session: AsyncSession, callback: CallbackQuery, state: FSMContext) -> None:
-        menu = await get_obj_by_id(session, Menu, get_id_from_callback(callback))
-        self.set_attrs(
-            menu_id=menu.id,
-            menu_name=menu.name,
-            menu_date=menu.date
-        )
-        await self.save(state)
-
-    async def receive_menu_positions(self, session: AsyncSession):
-        return await get_menu_positions_by_menu(session, self.get_attr('menu_id'))
 
 
 async def _get_canteen_id_by_user(session: AsyncSession, customer_id: CustomerId):
