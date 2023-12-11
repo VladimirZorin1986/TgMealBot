@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
@@ -64,6 +64,15 @@ async def process_get_place(callback: CallbackQuery, state: FSMContext, session:
 async def process_change_delivery_place(message: Message, session: AsyncSession, state: FSMContext):
     await process_choice_canteens_or_places(
         message, state, session, ChangeDeliveryPlace.set_new_canteen, ChangeDeliveryPlace.set_new_place
+    )
+
+
+@router.message(F.text.endswith('Изменить место доставки'), ~StateFilter(default_state))
+async def process_menu_button_with_context(message: Message, session: AsyncSession, state: FSMContext):
+    await message.answer(
+        text='Сначала закончите выполняемое действие. '
+             'Для отмены действия нажмите на команду /cancel',
+        reply_markup=ReplyKeyboardRemove()
     )
 
 

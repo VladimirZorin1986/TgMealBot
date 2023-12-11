@@ -45,6 +45,16 @@ async def process_new_order(message: Message, session: AsyncSession, state: FSMC
         )
 
 
+@router.message(F.text.endswith('Сделать новый заказ'), ~StateFilter(default_state))
+@router.message(~StateFilter(default_state), F.text.endswith('Отменить заказ'))
+async def process_menu_button_with_context(message: Message, session: AsyncSession, state: FSMContext):
+    await message.answer(
+        text='Сначала закончите выполняемое действие. '
+             'Для отмены действия нажмите на команду /cancel',
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+
 @router.callback_query(StateFilter(NewOrderState.menu_choice))
 async def new_order_positions(callback: CallbackQuery, session: AsyncSession, state: FSMContext):
     positions = await get_menu_positions(session, callback, state)
