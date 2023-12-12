@@ -10,10 +10,10 @@ class DbSessionManager:
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def get_obj_by_id(self, obj_cls: Obj, obj_id: int) -> Obj | None:
+    async def get_obj_by_id(self, obj_cls: Obj.__class__, obj_id: int) -> Obj | None:
         return await self._session.get(obj_cls, obj_id)
 
-    async def get_objs_by_cls(self, obj_cls: Obj) -> ScalarResult[Obj]:
+    async def get_objs_by_cls(self, obj_cls: Obj.__class__) -> ScalarResult[Obj]:
         stmt = select(obj_cls)
         return await self.execute_stmt_with_many_return(stmt)
 
@@ -28,6 +28,18 @@ class DbSessionManager:
     async def save_new_obj(self, obj: Obj) -> None:
         self._session.add(obj)
         await self._session.commit()
+
+    async def update_obj(self, obj: Obj, **kwargs) -> None:
+        for (key, value) in kwargs.items():
+            setattr(obj, key, value)
+        await self._session.commit()
+
+    async def delete_obj(self, obj: Obj) -> None:
+        await self._session.delete(obj)
+        await self._session.commit()
+
+    async def delete_obj_by_id(self, obj_cls: Obj.__class__, obj_id: int) -> None:
+        await self.delete_obj(self.get_obj_by_id(obj_cls, obj_id))
 
 
 class DatabaseManager:

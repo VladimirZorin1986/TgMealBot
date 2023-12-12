@@ -14,7 +14,7 @@ class TrackCallback:
 class UserForm:
     customer_id: int = field(default=None)
     tg_id: int = field(default=None)
-    canteen_id: int = field(default=None)
+    canteen_ids: list[int] = field(default_factory=list)
     place_id: int = field(default=None)
 
 
