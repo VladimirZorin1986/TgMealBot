@@ -20,7 +20,7 @@ from presentation.order_views import full_order_view, position_view, delete_orde
 router = Router()
 
 
-@router.message(F.text.endswith('Сделать новый заказ'), StateFilter(default_state))
+@router.message(F.text.endswith('Новый заказ'), StateFilter(default_state))
 async def process_new_order(message: Message, session: AsyncSession, state: FSMContext):
     try:
         customer = await get_customer_from_msg(session, state, message)
@@ -45,8 +45,8 @@ async def process_new_order(message: Message, session: AsyncSession, state: FSMC
         )
 
 
-@router.message(F.text.endswith('Сделать новый заказ'), ~StateFilter(default_state))
-@router.message(~StateFilter(default_state), F.text.endswith('Отменить заказ'))
+@router.message(F.text.endswith('Новый заказ'), ~StateFilter(default_state))
+@router.message(~StateFilter(default_state), F.text.endswith('Просмотр/Удаление заказов'))
 async def process_menu_button_with_context(message: Message, session: AsyncSession, state: FSMContext):
     await message.answer(
         text='Сначала закончите выполняемое действие. '
@@ -167,7 +167,7 @@ async def process_cancel_new_order(callback: CallbackQuery, session: AsyncSessio
     )
 
 
-@router.message(StateFilter(default_state), F.text.endswith('Отменить заказ'))
+@router.message(StateFilter(default_state), F.text.endswith('Просмотр/Удаление заказов'))
 async def process_delete_order(message: Message, session: AsyncSession, state: FSMContext):
     try:
         customer = await get_customer_from_msg(session, state, message)

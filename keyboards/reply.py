@@ -8,9 +8,9 @@ def authorization_kb() -> ReplyKeyboardMarkup:
 
 def initial_kb() -> ReplyKeyboardMarkup:
     kb = [
-        [KeyboardButton(text='🍱 Сделать новый заказ'),
-         KeyboardButton(text='🛑 Отменить заказ')],
-        [KeyboardButton(text='🚚 Изменить место доставки')]
+        [KeyboardButton(text='🍱 Новый заказ'),
+         KeyboardButton(text='🚚 Изменить место доставки')],
+        [KeyboardButton(text='🛑 Просмотр/Удаление заказов')]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, one_time_keyboard=True)
 
