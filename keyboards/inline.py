@@ -7,6 +7,7 @@ from services.user_services import get_places_by_canteen, get_canteen_by_id
 from services.order_services import get_valid_menus_by_user, get_menu_positions_by_menu
 from keyboards.callbacks import (CanteenCallbackFactory, PlaceCallbackFactory, MenuCallbackFactory,
                                  PositionCallbackFactory, OrderCallbackFactory)
+from services.models import DetailForm, OrderForm
 
 
 def show_canteens_kb(canteens: list[Canteen]) -> InlineKeyboardMarkup:
@@ -68,6 +69,24 @@ def dish_count_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
+def dish_count_kb_new(detail_form: DetailForm) -> InlineKeyboardMarkup:
+    keyboard = [[
+        InlineKeyboardButton(
+            text='➖1️⃣',
+            callback_data=f'minus:{detail_form.menu_pos_id}'
+        ),
+        InlineKeyboardButton(
+            text='✔ Добавить',
+            callback_data=f'add:{detail_form.menu_pos_id}'
+        ),
+        InlineKeyboardButton(
+            text='➕1️⃣',
+            callback_data=f'plus:{detail_form.menu_pos_id}'
+        )
+    ]]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
 def inline_confirm_cancel_kb() -> InlineKeyboardMarkup:
     kb = [
         [
@@ -92,6 +111,21 @@ def delete_order_kb(order_id: int) -> InlineKeyboardMarkup:
                     text='❌ Удалить заказ',
                     callback_data=OrderCallbackFactory(
                         order_id=order_id
+                    ).pack()
+                )
+            ]
+        ]
+    )
+
+
+def delete_order_kb_new(order_form: OrderForm) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text='❌ Удалить заказ',
+                    callback_data=OrderCallbackFactory(
+                        order_id=order_form.order_id
                     ).pack()
                 )
             ]

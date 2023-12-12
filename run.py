@@ -9,6 +9,7 @@ from handlers.user_handlers import router as user_router
 from handlers.order_handlers import router as order_router
 from handlers.other_handlers import router as other_router
 from handlers.command_handlers import router as command_router
+from handlers.test_handlers import router as test_order_router
 
 logger = logging.getLogger(__name__)
 

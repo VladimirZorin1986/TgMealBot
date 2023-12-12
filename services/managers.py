@@ -190,10 +190,12 @@ class OrderManager(ServiceManager):
         self._model.selected_details.append(detail)
         await self._save(state)
 
-    def receive_full_order(self):
+    def receive_full_order(self) -> OrderForm:
+        if not self._model.selected_details:
+            raise NoPositionsSelected
         return self._model
 
-    async def process_pending_order(self, session: AsyncSession) -> None:
+    async def confirm_pending_order(self, session: AsyncSession) -> None:
         db_session = self._db(session)
         order = self._create_order_from_model()
         if await self._is_valid_order(db_session, order):
