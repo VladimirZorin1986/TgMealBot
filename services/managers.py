@@ -174,7 +174,7 @@ class OrderManager(ServiceManager):
 
     async def increment_position_quantity(self, callback: CallbackQuery, state: FSMContext) -> DetailForm:
         detail: DetailForm = self._model.raw_details.get(get_id_from_callback(callback))
-        if callback.data == 'plus':
+        if callback.data.startswith('plus'):
             detail.quantity += 1
         elif detail.quantity - 1 > 0:
             detail.quantity -= 1
