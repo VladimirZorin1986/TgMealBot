@@ -22,9 +22,6 @@ class ServiceManager:
         for (key, value) in kwargs.items():
             setattr(self._model, key, value)
 
-    def _get_attr(self, attr_name: str):
-        return getattr(self._model, attr_name)
-
     async def _save(self, state: FSMContext):
         await state.update_data({self.__class__.__name__: self})
 
@@ -142,13 +139,13 @@ class OrderManager(ServiceManager):
     async def _get_canteen_id_by_user(self, db_session: DbSessionManager) -> int | None:
         stmt = (select(DeliveryPlace.canteen_id).
                 join(DeliveryPlace.customers).
-                where(Customer.id == self._get_attr('customer_id')))
+                where(Customer.id == self._model.customer_id))
         return await db_session.execute_stmt_with_one_or_none_return(stmt)
 
     async def _is_valid_menu(self, db_session: DbSessionManager, menu: Menu) -> bool:
         stmt = select(Order).where(
             Order.menu_id == menu.id,
-            Order.customer_id == self._get_attr('customer_id')
+            Order.customer_id == self._model.customer_id
         )
         order = await db_session.execute_stmt_with_one_or_none_return(stmt)
         return not order and (menu.beg_time <= datetime.datetime.now() <= menu.end_time)
@@ -176,7 +173,7 @@ class OrderManager(ServiceManager):
         return list(raw_details.values())
 
     async def increment_position_quantity(self, callback: CallbackQuery, state: FSMContext) -> DetailForm:
-        detail: DetailForm = self._get_attr('raw_details').get(get_id_from_callback(callback))
+        detail: DetailForm = self._model.raw_details.get(get_id_from_callback(callback))
         if callback.data == 'plus':
             detail.quantity += 1
         elif detail.quantity - 1 > 0:
@@ -187,10 +184,10 @@ class OrderManager(ServiceManager):
         return detail
 
     async def add_position_to_order(self, callback: CallbackQuery, state: FSMContext) -> None:
-        detail: DetailForm = self._get_attr('raw_details').get(get_id_from_callback(callback))
-        new_amt = detail.quantity * detail.menu_pos_cost + self._get_attr('amt')
+        detail: DetailForm = self._model.raw_details.get(get_id_from_callback(callback))
+        new_amt = detail.quantity * detail.menu_pos_cost + self._model.amt
         self._set_attrs(amt=new_amt)
-        self._get_attr('selected_details').append(detail)
+        self._model.selected_details.append(detail)
         await self._save(state)
 
     def receive_full_order(self):
