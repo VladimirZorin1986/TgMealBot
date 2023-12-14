@@ -39,7 +39,7 @@ class DbSessionManager:
         await self._session.commit()
 
     async def delete_obj_by_id(self, obj_cls: Obj.__class__, obj_id: int) -> None:
-        await self.delete_obj(self.get_obj_by_id(obj_cls, obj_id))
+        await self.delete_obj(await self.get_obj_by_id(obj_cls, obj_id))
 
 
 class DatabaseManager:

@@ -29,11 +29,9 @@ class ServiceManager:
         if message.contact:
             raw_phone_number = message.contact.phone_number
             phone_number = raw_phone_number if len(raw_phone_number) == 12 else f'+{raw_phone_number}'
-            stmt = select(Customer).where(Customer.phone_number == phone_number).options(
-                selectinload(Customer.permissions))
+            stmt = select(Customer).where(Customer.phone_number == phone_number)
         else:
-            stmt = select(Customer).where(Customer.tg_id == message.from_user.id).options(
-                selectinload(Customer.permissions))
+            stmt = select(Customer).where(Customer.tg_id == message.from_user.id)
         customer = await db_session.execute_stmt_with_one_or_none_return(stmt)
         if customer and self._is_valid_customer(customer):
             return customer
@@ -261,7 +259,7 @@ class OrderManager(ServiceManager):
             self, session: AsyncSession, message: Message) -> list[OrderForm]:
         db_session = self._db(session)
         customer = await self._get_customer_from_msg(db_session, message)
-        stmt = select(Order).where(Order.customer_id == customer.id).options(selectinload(Order.details))
+        stmt = select(Order).where(Order.customer_id == customer.id)
         valid_orders = [
             order for order in await db_session.execute_stmt_with_many_return(stmt) if not order.sent_to_eis
         ]

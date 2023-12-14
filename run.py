@@ -37,7 +37,7 @@ async def main():
 
     dp.include_router(command_router)
     dp.include_router(user_router)
-    dp.include_router(order_router)
+    dp.include_router(test_order_router)
     dp.include_router(other_router)
 
     await bot.delete_webhook(drop_pending_updates=True)

@@ -58,7 +58,7 @@ class Customer(Base):
     choice_place_in_order: Mapped[bool] = mapped_column(Boolean, default=False)
 
     orders: Mapped[List['Order']] = relationship()
-    permissions: Mapped[List['CustomerPermission']] = relationship()
+    permissions: Mapped[List['CustomerPermission']] = relationship(lazy='selectin')
 
 
 class CustomerPermission(Base):
@@ -156,7 +156,7 @@ class Order(Base):
         ForeignKey('delivery_place.id', ondelete='RESTRICT')
     )
 
-    details: Mapped[List['OrderDetail']] = relationship()
+    details: Mapped[List['OrderDetail']] = relationship(lazy='selectin', cascade='all, delete-orphan')
 
 
 class OrderDetail(Base):
