@@ -21,7 +21,7 @@ class Canteen(Base):
     name: Mapped[str] = mapped_column(String(100))
 
     places: Mapped[List['DeliveryPlace']] = relationship()
-    menus: Mapped[List['Menu']] = relationship()
+    menus: Mapped[List['Menu']] = relationship(order_by='Menu.date')
     permissions: Mapped[List['CustomerPermission']] = relationship()
 
 
@@ -58,7 +58,7 @@ class Customer(Base):
     choice_place_in_order: Mapped[bool] = mapped_column(Boolean, default=False)
 
     orders: Mapped[List['Order']] = relationship()
-    permissions: Mapped[List['CustomerPermission']] = relationship(lazy='selectin')
+    permissions: Mapped[List['CustomerPermission']] = relationship()
 
 
 class CustomerPermission(Base):
@@ -126,7 +126,7 @@ class MenuPosition(Base):
         Numeric(precision=10, scale=2, asdecimal=True),
         nullable=True
     )
-    quantity: Mapped[int] = mapped_column(SmallInteger, default=1)
+    complex_qty: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
     menu_id: Mapped[int] = mapped_column(
         ForeignKey('menu.id', ondelete='CASCADE')
     )
@@ -156,7 +156,7 @@ class Order(Base):
         ForeignKey('delivery_place.id', ondelete='RESTRICT')
     )
 
-    details: Mapped[List['OrderDetail']] = relationship(lazy='selectin', cascade='all, delete-orphan')
+    details: Mapped[List['OrderDetail']] = relationship(cascade='all, delete-orphan')
 
 
 class OrderDetail(Base):

@@ -1,6 +1,6 @@
 import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, ScalarResult
+from sqlalchemy import select, ScalarResult, ColumnElement
 from sqlalchemy.orm import selectinload
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -169,6 +169,14 @@ async def increment_position_qty(state: FSMContext, callback: CallbackQuery) -> 
     return position
 
 
+async def _get_raw_result(session: AsyncSession, obj_cls, **kwargs):
+    stmt = select(obj_cls)
+    for attr, value in kwargs.items():
+        stmt = stmt.where(getattr(obj_cls, attr) == value)
+    raw_result = await session.execute(stmt)
+    return raw_result.scalar_one_or_none()
+
+
 if __name__ == '__main__':
     import asyncio
     from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -185,12 +193,14 @@ if __name__ == '__main__':
         async_session = async_sessionmaker(engine, expire_on_commit=False)
 
         async with async_session() as session:
-            menus = await get_valid_menus_by_user(session, 1106699847)
-            for menu in menus:
-                print(f'{menu.id} {menu.name}')
-                positions = await get_menu_positions_by_menu(session, menu.id)
-                for position in positions:
-                    print(f'{position.id} {position.name}')
+            customer = await _get_raw_result(session, Customer, phone_number='+79856254915')
+            print(customer.tg_id)
+            # canteen = await get_obj_by_id(session, Canteen, 4)
+            # for menu in await canteen.awaitable_attrs.menus:
+            #     print(f'{menu.name} на {menu.date}')
+            #     for position in await menu.awaitable_attrs.positions:
+            #         print(f'{position.name}: {position.cost}')
+
 
 
         # for AsyncEngine created in function scope, close and

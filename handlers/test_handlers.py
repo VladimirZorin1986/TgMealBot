@@ -12,6 +12,7 @@ from services.other_services import add_message_to_track, terminate_state_branch
 from exceptions import (InvalidPositionQuantity, ValidMenusNotExist, IsNotCustomer,
                         ValidOrdersNotExist, NoPositionsSelected, InvalidOrder)
 from presentation.order_views import position_view_new, order_view
+from presentation.responses import message_response
 from middlewares.local_middlewares import ServiceManagerMiddleware
 from services.managers import OrderManager
 
@@ -25,29 +26,34 @@ async def process_new_order(
         message: Message, session: AsyncSession, state: FSMContext, manager: OrderManager) -> None:
     try:
         await manager.start_process_new_order(session, state, message)
-        valid_menus = await manager.receive_valid_menus(session)
-        msg = await message.answer(
-            text='Выберите меню для заказа:',
-            reply_markup=order_menu_kb(valid_menus)
-        )
-        await add_message_to_track(msg, state)
+        valid_menus = await manager.receive_valid_menus(session, state)
         await state.set_state(NewOrderState.menu_choice)
+        await message_response(
+            message=message,
+            text='Выберите меню для заказа:',
+            reply_markup=order_menu_kb(valid_menus),
+            state=state
+        )
     except ValidMenusNotExist:
-        await message.answer(
+        await message_response(
+            message=message,
             text='Нет доступных меню для заказа',
             reply_markup=initial_kb()
         )
     except IsNotCustomer:
-        await message.answer(
+        await message_response(
+            message=message,
             text='Вас больше нет в списке заказчиков. Пройдите повторную авторизацию.'
                  'Для этого выберите в меню команду /start',
             reply_markup=ReplyKeyboardRemove()
         )
 
 
-@router.message(~StateFilter(default_state), F.text.endswith('Просмотр/Удаление заказов') | F.text.endswith('Новый заказ'))
+@router.message(
+    ~StateFilter(default_state), F.text.endswith('Просмотр/Удаление заказов') | F.text.endswith('Новый заказ'))
 async def process_menu_button_with_context(message: Message):
-    await message.answer(
+    await message_response(
+        message=message,
         text='Сначала закончите выполняемое действие. '
              'Для отмены действия нажмите на команду /cancel',
         reply_markup=ReplyKeyboardRemove()
