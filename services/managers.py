@@ -30,19 +30,20 @@ class ServiceManager:
             phone_number = raw_phone_number if len(raw_phone_number) == 12 else f'+{raw_phone_number}'
             attr_dict = {'phone_number': phone_number}
         customer = await db_session.get_obj_by_attrs(Customer, **attr_dict)
-        if customer and await self._is_valid_customer(customer):
+        if await self._is_valid_customer(customer):
             return customer
         raise IsNotCustomer
 
     async def _is_valid_customer(self, customer: Customer) -> bool:
-        return any(filter(self._is_valid_permission, await customer.awaitable_attrs.permissions))
+        return (customer and
+                any(filter(self._is_valid_permission, await customer.awaitable_attrs.permissions)))
 
     @staticmethod
     def _is_valid_permission(permission: CustomerPermission) -> bool:
         return permission.beg_date <= datetime.date.today() <= (permission.end_date or datetime.date.today())
 
     @staticmethod
-    def get_id_from_callback(callback: CallbackQuery) -> int:
+    def _get_id_from_callback(callback: CallbackQuery) -> int:
         return int(callback.data.split(':')[-1])
 
 
@@ -84,20 +85,20 @@ class UserManager(ServiceManager):
             callback: CallbackQuery | None = None) -> list[DeliveryPlace]:
         if not canteen:
             db_session = self._db(session)
-            canteen = await db_session.get_obj_by_id(Canteen, self.get_id_from_callback(callback))
+            canteen = await db_session.get_obj_by_id(Canteen, self._get_id_from_callback(callback))
         return await canteen.awaitable_attrs.places
 
     async def authorize_customer(self, session: AsyncSession, callback: CallbackQuery) -> None:
         await self._update_customer_data(
             session=session,
             tg_id=self._model.tg_id,
-            place_id=self.get_id_from_callback(callback)
+            place_id=self._get_id_from_callback(callback)
         )
 
     async def change_delivery_place(self, session: AsyncSession, callback: CallbackQuery) -> None:
         await self._update_customer_data(
             session=session,
-            place_id=self.get_id_from_callback(callback)
+            place_id=self._get_id_from_callback(callback)
         )
 
     async def _update_customer_data(self, session: AsyncSession, **kwargs):
@@ -122,7 +123,8 @@ class OrderManager(ServiceManager):
             customer_id=customer.id,
             canteen_id=place.canteen_id,
             place_id=place.id,
-            place_name=place.name
+            place_name=place.name,
+            custom_menu=place.custom_menu
         )
         await self._save(state)
 
@@ -142,15 +144,16 @@ class OrderManager(ServiceManager):
         order = await db_session.get_obj_by_attrs(Order, menu_id=menu.id, customer_id=self._model.customer_id)
         return not order and (menu.beg_time <= datetime.datetime.now() <= menu.end_time)
 
-    async def receive_menu_positions(
-            self, session: AsyncSession, callback: CallbackQuery, state: FSMContext) -> list[DetailForm]:
-        db_session = self._db(session)
-        menu = await db_session.get_obj_by_id(Menu, self.get_id_from_callback(callback))
+    async def _get_menu_info(self, db_session: DbSessionManager, menu_id: int) -> Menu:
+        menu = await db_session.get_obj_by_id(Menu, menu_id)
         self._set_attrs(
             menu_id=menu.id,
             menu_name=menu.name,
             menu_date=menu.date
         )
+        return menu
+
+    async def _get_raw_details_from_menu(self, menu: Menu) -> dict[int, DetailForm]:
         raw_details = {
             position.id: DetailForm(
                 menu_pos_id=position.id,
@@ -159,11 +162,42 @@ class OrderManager(ServiceManager):
             ) for position in await menu.awaitable_attrs.positions
         }
         self._set_attrs(raw_details=raw_details)
+        return raw_details
+
+    async def receive_menu_positions(
+            self, session: AsyncSession, callback: CallbackQuery, state: FSMContext) -> list[DetailForm]:
+        db_session = self._db(session)
+        menu = await self._get_menu_info(db_session, self._get_id_from_callback(callback))
+        raw_details = await self._get_raw_details_from_menu(menu)
         await self._save(state)
         return list(raw_details.values())
 
+    def complex_menu(self) -> bool:
+        return not self._model.custom_menu
+
+    async def _get_details_from_complex_menu(self, menu: Menu) -> list[DetailForm]:
+        selected_details = [
+            DetailForm(
+                menu_pos_id=position.id,
+                menu_pos_name=position.name,
+                menu_pos_cost=position.cost if position.cost else 0,
+                quantity=position.complex_qty
+            ) for position in await menu.awaitable_attrs.positions if position.complex_qty
+        ]
+        self._set_attrs(selected_details=selected_details)
+        return selected_details
+
+    async def receive_complex_order(
+            self, session: AsyncSession, callback: CallbackQuery, state: FSMContext) -> OrderForm:
+        db_session = self._db(session)
+        menu = await self._get_menu_info(db_session, self._get_id_from_callback(callback))
+        selected_details = await self._get_details_from_complex_menu(menu)
+        self._set_attrs(amt=sum(detail.menu_pos_cost * detail.quantity for detail in selected_details))
+        await self._save(state)
+        return self.receive_full_order()
+
     async def increment_position_quantity(self, callback: CallbackQuery, state: FSMContext) -> DetailForm:
-        detail: DetailForm = self._model.raw_details.get(self.get_id_from_callback(callback))
+        detail: DetailForm = self._model.raw_details.get(self._get_id_from_callback(callback))
         if callback.data.startswith('plus'):
             detail.quantity += 1
         elif detail.quantity - 1 > 0:
@@ -174,7 +208,7 @@ class OrderManager(ServiceManager):
         return detail
 
     async def add_position_to_order(self, callback: CallbackQuery, state: FSMContext) -> None:
-        detail: DetailForm = self._model.raw_details.get(self.get_id_from_callback(callback))
+        detail: DetailForm = self._model.raw_details.get(self._get_id_from_callback(callback))
         new_amt = detail.quantity * detail.menu_pos_cost + self._model.amt
         self._set_attrs(amt=new_amt)
         self._model.selected_details.append(detail)
@@ -261,4 +295,4 @@ class OrderManager(ServiceManager):
 
     async def cancel_order(self, session: AsyncSession, callback: CallbackQuery) -> None:
         db_session = self._db(session)
-        await db_session.delete_obj_by_id(Order, self.get_id_from_callback(callback))
+        await db_session.delete_obj_by_id(Order, self._get_id_from_callback(callback))

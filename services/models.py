@@ -35,6 +35,7 @@ class OrderForm:
     amt: Decimal = field(default=0)
     place_id: int = field(default=None)
     place_name: str = field(default=None)
+    custom_menu: bool = field(default=None)
     canteen_id: int = field(default=None)
     canteen_name: str = field(default=None)
     menu_id: int = field(default=None)

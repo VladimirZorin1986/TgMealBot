@@ -1,5 +1,4 @@
 import asyncio
-from typing import NewType, Optional
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from services.other_services import add_message_to_track

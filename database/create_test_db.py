@@ -23,6 +23,7 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                             id=2,
                             name='Столовая',
                             begin_date=datetime.date(year=2023, month=9, day=18),
+                            custom_menu=True,
                             orders=[],
                             customers=[]
                         ),
@@ -52,6 +53,7 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                             id=5,
                             name='Столовая',
                             begin_date=datetime.date(year=2023, month=9, day=18),
+                            custom_menu=True,
                             orders=[],
                             customers=[]
                         ),
@@ -297,6 +299,20 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                                     name='Компот из сухофруктов',
                                     weight='100/50',
                                     cost=15.50
+                                ),
+                                MenuPosition(
+                                    id=13,
+                                    name='Лагман по-узбекски',
+                                    weight='150',
+                                    cost=200.10,
+                                    complex_qty=1
+                                ),
+                                MenuPosition(
+                                    id=14,
+                                    name='Фреш мандариновый',
+                                    weight='100/50',
+                                    cost=15.50,
+                                    complex_qty=2
                                 )
                             ],
                             orders=[]
