@@ -1,4 +1,3 @@
-import asyncio
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.filters import StateFilter
@@ -8,11 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from keyboards.inline import order_menu_kb, dish_count_kb_new, inline_confirm_cancel_kb, delete_order_kb_new
 from keyboards.reply import confirm_cancel_kb, back_to_initial_kb, initial_kb
 from states.order_states import NewOrderState, CancelOrderState
-from services.other_services import add_message_to_track, terminate_state_branch
+from services.other_services import terminate_state_branch
 from exceptions import (InvalidPositionQuantity, ValidMenusNotExist, IsNotCustomer,
                         ValidOrdersNotExist, NoPositionsSelected, InvalidOrder)
 from presentation.order_views import position_view_new, order_view
-from presentation.responses import message_response
+from presentation.responses import message_response, callback_response, edit_response
 from middlewares.local_middlewares import ServiceManagerMiddleware
 from services.managers import OrderManager
 
@@ -65,47 +64,51 @@ async def new_order_positions(
         callback: CallbackQuery, session: AsyncSession, state: FSMContext, manager: OrderManager) -> None:
     positions = await manager.receive_menu_positions(session, callback, state)
     for position in positions:
-        msg = await callback.message.answer(
+        await message_response(
+            message=callback.message,
             text=position_view_new(position),
-            reply_markup=dish_count_kb_new(position)
+            reply_markup=dish_count_kb_new(position),
+            state=state,
+            delay=0.2
         )
-        await add_message_to_track(msg, state)
-        await asyncio.sleep(0.3)
     await state.set_state(NewOrderState.dish_choice)
-    cb_msg = await callback.message.answer(
+    await message_response(
+        message=callback.message,
         text='После добавления блюд нажмите <b><i>Подтвердить</i></b>, чтобы сохранить заказ. '
              'Для отмены заказа нажмите <b><i>Отменить</i></b>.',
-        reply_markup=confirm_cancel_kb()
+        reply_markup=confirm_cancel_kb(),
+        state=state
     )
-    await add_message_to_track(cb_msg, state)
-    await callback.answer()
+    await callback_response(callback)
 
 
 @router.callback_query(StateFilter(NewOrderState.dish_choice), F.data.startswith('minus') | F.data.startswith('plus'))
 async def change_quantity_of_position(
         callback: CallbackQuery, state: FSMContext, manager: OrderManager):
+    text = None
     try:
         position = await manager.increment_position_quantity(callback, state)
-        await callback.message.edit_text(
+        await edit_response(
+            message=callback.message,
             text=position_view_new(position),
             reply_markup=dish_count_kb_new(position)
         )
     except InvalidPositionQuantity:
-        await callback.answer(
-            text='Количество не может быть меньше 1'
-        )
-    await callback.answer()
+        text = 'Количество не может быть меньше 1'
+    finally:
+        await callback_response(callback, text=text)
 
 
 @router.callback_query(StateFilter(NewOrderState.dish_choice), F.data.startswith('add'))
 async def add_new_position_to_order(
         callback: CallbackQuery, state: FSMContext, manager: OrderManager) -> None:
     await manager.add_position_to_order(callback, state)
-    await callback.answer(
+    await callback_response(
+        callback=callback,
         text='Позиция успешно добавлена',
-        show_alert=True
+        show_alert=True,
+        delete_after=True
     )
-    await callback.message.delete()
 
 
 @router.message(StateFilter(NewOrderState.dish_choice), F.text.endswith('Подтвердить'))
@@ -114,28 +117,33 @@ async def process_order_info(
     try:
         order = manager.receive_full_order()
         await state.set_state(NewOrderState.check_status)
-        msg1 = await message.answer(
+        await message_response(
+            message=message,
             text='Проверьте свой заказ:',
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=ReplyKeyboardRemove(),
+            state=state
         )
-        await add_message_to_track(msg1, state)
-        msg2 = await message.answer(
+        await message_response(
+            message=message,
             text=order_view(order),
-            reply_markup=inline_confirm_cancel_kb()
+            reply_markup=inline_confirm_cancel_kb(),
+            state=state
         )
-        await add_message_to_track(msg2, state)
     except NoPositionsSelected:
-        await message.answer(
+        await message_response(
+            message=message,
             text='Вы не выбрали ни одной позиции для заказа. '
                  'Выберите необходимые позиции или отмените заполнение заказа с помощью кнопки <b><i>Отменить</i></b>',
-            reply_markup=confirm_cancel_kb()
+            reply_markup=confirm_cancel_kb(),
+            state=state
         )
 
 
 @router.message(StateFilter(NewOrderState.dish_choice), F.text.endswith('Отменить'))
 async def process_cancel_order(message: Message, state: FSMContext):
     await terminate_state_branch(message, state, add_last=False)
-    await message.answer(
+    await message_response(
+        message=message,
         text='Возврат в главное меню',
         reply_markup=initial_kb()
     )
@@ -144,20 +152,22 @@ async def process_cancel_order(message: Message, state: FSMContext):
 @router.callback_query(StateFilter(NewOrderState.check_status), F.data == 'save')
 async def process_pending_new_order(
         callback: CallbackQuery, session: AsyncSession, state: FSMContext, manager: OrderManager):
+    text = ('Произошла ошибка при сохранении заказа. '
+            'Попробуйте еще раз или нажмите /cancel для возврата в главное меню')
     try:
         await manager.confirm_pending_order(session)
-        await callback.answer(
-            text='Ваш заказ отправлен',
-            show_alert=True
-        )
+        text = 'Ваш заказ отправлен'
     except InvalidOrder:
-        await callback.answer(
-            text='Заказ не может быть отправлен.',
+        text = 'Заказ не может быть отправлен.'
+    finally:
+        await callback_response(
+            callback=callback,
+            text=text,
             show_alert=True
         )
-    finally:
         await terminate_state_branch(callback.message, state)
-        await callback.message.answer(
+        await message_response(
+            message=callback.message,
             text='Возврат в главное меню',
             reply_markup=initial_kb()
         )
@@ -165,12 +175,14 @@ async def process_pending_new_order(
 
 @router.callback_query(StateFilter(NewOrderState.check_status), F.data == 'cancel')
 async def process_cancel_new_order(callback: CallbackQuery, state: FSMContext):
-    await callback.answer(
+    await callback_response(
+        callback=callback,
         text='Заказ отменен',
         show_alert=True
     )
     await terminate_state_branch(callback.message, state)
-    await callback.message.answer(
+    await message_response(
+        message=callback.message,
         text='Возврат в главное меню',
         reply_markup=initial_kb()
     )
@@ -179,30 +191,33 @@ async def process_cancel_new_order(callback: CallbackQuery, state: FSMContext):
 @router.message(StateFilter(default_state), F.text.endswith('Просмотр/Удаление заказов'))
 async def process_delete_order(
         message: Message, session: AsyncSession, state: FSMContext, manager: OrderManager):
+    text = 'Произошла ошибка. Нажмите на команду /start, чтобы попробовать снова.'
+    reply_markup = None
     try:
         orders = await manager.receive_customer_orders(session, message)
-        for order in orders:
-            msg = await message.answer(
-                text=order_view(order),
-                reply_markup=delete_order_kb_new(order)
-            )
-            await add_message_to_track(msg, state)
         await state.set_state(CancelOrderState.order_choices)
-        await message.answer(
-            text='Для возвращения в главное меню, после удаления выбранных заказов, нажмите на кнопку '
-                 '<b><i>Вернуться в главное меню</i></b>',
-            reply_markup=back_to_initial_kb()
-        )
+        for order in orders:
+            await message_response(
+                message=message,
+                text=order_view(order),
+                reply_markup=delete_order_kb_new(order),
+                state=state
+            )
+        text = ('Для возвращения в главное меню, после удаления выбранных заказов, нажмите на кнопку '
+                '<b><i>Вернуться в главное меню</i></b>')
+        reply_markup = back_to_initial_kb()
     except IsNotCustomer:
-        await message.answer(
-            text='Вас больше нет в списке заказчиков. Пройдите повторную авторизацию.'
-                 'Для этого выберите в меню команду /start',
-            reply_markup=ReplyKeyboardRemove()
-        )
+        text = ('Вас больше нет в списке заказчиков. Пройдите повторную авторизацию. '
+                'Для этого выберите в меню команду /start'),
+        reply_markup = ReplyKeyboardRemove()
     except ValidOrdersNotExist:
-        await message.answer(
-            text='У вас нет активных заказов для удаления.',
-            reply_markup=initial_kb()
+        text = 'У вас нет активных заказов для удаления.',
+        reply_markup = initial_kb()
+    finally:
+        await message_response(
+            message=message,
+            text=text,
+            reply_markup=reply_markup
         )
 
 
@@ -210,16 +225,18 @@ async def process_delete_order(
 async def process_delete_order(
         callback: CallbackQuery, session: AsyncSession, manager: OrderManager):
     await manager.cancel_order(session, callback)
-    await callback.answer(
+    await callback_response(
+        callback=callback,
         text='Заказ успешно удален',
-        show_alert=True
+        show_alert=True,
+        delete_after=True
     )
-    await callback.message.delete()
 
 
 @router.message(StateFilter(CancelOrderState.order_choices), F.text.endswith('Вернуться в главное меню'))
 async def process_back_to_main_menu(message: Message, state: FSMContext):
-    await message.answer(
+    await message_response(
+        message=message,
         text='Возврат в главное меню',
         reply_markup=initial_kb()
     )
