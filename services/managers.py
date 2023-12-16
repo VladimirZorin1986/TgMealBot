@@ -51,7 +51,7 @@ class UserManager(ServiceManager):
     def __init__(self):
         super().__init__(UserForm())
 
-    async def start_auth_process(self, session: AsyncSession, message: Message, state: FSMContext) -> None:
+    async def validate_customer(self, session: AsyncSession, message: Message, state: FSMContext) -> None:
         db_session = self._db(session)
         customer = await self._get_customer_from_msg(db_session, message)
         valid_canteen_ids = await self._get_valid_canteen_ids(customer)
@@ -75,12 +75,16 @@ class UserManager(ServiceManager):
 
     async def receive_canteens(self, session: AsyncSession) -> list[Canteen]:
         db_session = self._db(session)
-        return [db_session.get_obj_by_id(Canteen, canteen_id) for canteen_id in self._model.canteen_ids]
+        return [await db_session.get_obj_by_id(Canteen, canteen_id) for canteen_id in self._model.canteen_ids]
 
-    async def receive_canteen_places(self, session: AsyncSession, canteen_id: int | None = None) -> list[DeliveryPlace]:
-        db_session = self._db(session)
-        canteen_id = canteen_id or self._model.canteen_ids[0]
-        canteen = await db_session.get_obj_by_id(Canteen, canteen_id)
+    async def receive_canteen_places(
+            self,
+            canteen: Canteen | None = None,
+            session: AsyncSession | None = None,
+            callback: CallbackQuery | None = None) -> list[DeliveryPlace]:
+        if not canteen:
+            db_session = self._db(session)
+            canteen = await db_session.get_obj_by_id(Canteen, self.get_id_from_callback(callback))
         return await canteen.awaitable_attrs.places
 
     async def authorize_customer(self, session: AsyncSession, callback: CallbackQuery) -> None:
@@ -231,7 +235,7 @@ class OrderManager(ServiceManager):
         menu = await db_session.get_obj_by_id(Menu, order.menu_id)
         place = await db_session.get_obj_by_id(DeliveryPlace, order.place_id)
         canteen = await db_session.get_obj_by_id(Canteen, place.canteen_id)
-        details = await self._create_form_details_from_order_details(db_session, order.details)
+        details = await self._create_form_details_from_order_details(db_session, await order.awaitable_attrs.details)
         return OrderForm(
             order_id=order.id,
             created_at=order.created_at,

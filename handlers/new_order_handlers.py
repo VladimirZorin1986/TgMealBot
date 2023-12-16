@@ -23,28 +23,27 @@ router.callback_query.middleware(ServiceManagerMiddleware(OrderManager))
 @router.message(F.text.endswith('Новый заказ'), StateFilter(default_state))
 async def process_new_order(
         message: Message, session: AsyncSession, state: FSMContext, manager: OrderManager) -> None:
+    text = 'Произошла ошибка при инициализации нового заказа.'
+    reply_markup = None
     try:
         await manager.start_process_new_order(session, state, message)
         valid_menus = await manager.receive_valid_menus(session, state)
         await state.set_state(NewOrderState.menu_choice)
-        await message_response(
-            message=message,
-            text='Выберите меню для заказа:',
-            reply_markup=order_menu_kb(valid_menus),
-            state=state
-        )
+        text = 'Выберите меню для заказа:'
+        reply_markup = order_menu_kb(valid_menus)
     except ValidMenusNotExist:
-        await message_response(
-            message=message,
-            text='Нет доступных меню для заказа',
-            reply_markup=initial_kb()
-        )
+        text = 'Нет доступных меню для заказа'
+        reply_markup = initial_kb()
     except IsNotCustomer:
+        text = ('Вас больше нет в списке заказчиков. Пройдите повторную авторизацию. '
+                'Для этого выберите в меню команду /start')
+        reply_markup = ReplyKeyboardRemove()
+    finally:
         await message_response(
             message=message,
-            text='Вас больше нет в списке заказчиков. Пройдите повторную авторизацию.'
-                 'Для этого выберите в меню команду /start',
-            reply_markup=ReplyKeyboardRemove()
+            text=text,
+            reply_markup=reply_markup,
+            state=state
         )
 
 
@@ -208,10 +207,10 @@ async def process_delete_order(
         reply_markup = back_to_initial_kb()
     except IsNotCustomer:
         text = ('Вас больше нет в списке заказчиков. Пройдите повторную авторизацию. '
-                'Для этого выберите в меню команду /start'),
+                'Для этого выберите в меню команду /start')
         reply_markup = ReplyKeyboardRemove()
     except ValidOrdersNotExist:
-        text = 'У вас нет активных заказов для удаления.',
+        text = 'У вас нет активных заказов для удаления.'
         reply_markup = initial_kb()
     finally:
         await message_response(

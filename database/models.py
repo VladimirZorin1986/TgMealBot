@@ -35,6 +35,7 @@ class DeliveryPlace(Base):
     name: Mapped[str] = mapped_column(String(80))
     begin_date: Mapped[datetime.date] = mapped_column(Date)
     end_date: Mapped[Optional[datetime.date]] = mapped_column(Date, nullable=True)
+    custom_menu: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     canteen_id: Mapped[int] = mapped_column(
         ForeignKey(column='canteen.id', ondelete='CASCADE')
     )
@@ -156,7 +157,7 @@ class Order(Base):
         ForeignKey('delivery_place.id', ondelete='RESTRICT')
     )
 
-    details: Mapped[List['OrderDetail']] = relationship(cascade='all, delete-orphan')
+    details: Mapped[List['OrderDetail']] = relationship(passive_deletes=True)
 
 
 class OrderDetail(Base):

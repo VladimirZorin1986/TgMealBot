@@ -74,10 +74,12 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                     orders=[],
                     permissions=[
                         CustomerPermission(
+                            id=10000,
                             beg_date=datetime.date.today(),
                             canteen_id=2
                         ),
                         CustomerPermission(
+                            id=11000,
                             beg_date=datetime.date.today(),
                             canteen_id=4
                         )
@@ -89,8 +91,14 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                     orders=[],
                     permissions=[
                         CustomerPermission(
+                            id=20000,
                             beg_date=datetime.date.today(),
                             canteen_id=4
+                        ),
+                        CustomerPermission(
+                            id=21000,
+                            beg_date=datetime.date.today(),
+                            canteen_id=2
                         )
                     ]
                 ),
@@ -100,10 +108,12 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                     orders=[],
                     permissions=[
                         CustomerPermission(
+                            id=30000,
                             beg_date=datetime.date.today(),
                             canteen_id=2
                         ),
                         CustomerPermission(
+                            id=31000,
                             beg_date=datetime.date.today(),
                             canteen_id=4
                         )
@@ -115,10 +125,12 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                     orders=[],
                     permissions=[
                         CustomerPermission(
+                            id=40000,
                             beg_date=datetime.date.today(),
                             canteen_id=2
                         ),
                         CustomerPermission(
+                            id=41000,
                             beg_date=datetime.date.today(),
                             canteen_id=4
                         )
@@ -130,10 +142,12 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                     orders=[],
                     permissions=[
                         CustomerPermission(
+                            id=50000,
                             beg_date=datetime.date.today(),
                             canteen_id=2
                         ),
                         CustomerPermission(
+                            id=51000,
                             beg_date=datetime.date.today(),
                             canteen_id=4
                         )
@@ -145,10 +159,12 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                     orders=[],
                     permissions=[
                         CustomerPermission(
+                            id=60000,
                             beg_date=datetime.date.today(),
                             canteen_id=2
                         ),
                         CustomerPermission(
+                            id=61000,
                             beg_date=datetime.date.today(),
                             canteen_id=4
                         )

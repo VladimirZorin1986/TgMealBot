@@ -4,17 +4,18 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, ReplyKey
 from aiogram.fsm.context import FSMContext
 from services.other_services import add_message_to_track
 
-KeyboardMarkup = NewType('KeyboardMarkup', Optional[InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove])
+KeyboardMarkup = InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove
 
 
 async def message_response(
         message: Message,
         text: str,
-        reply_markup: KeyboardMarkup,
+        reply_markup: KeyboardMarkup | None = None,
         state: FSMContext | None = None,
         delay: float | None = None,
-        delete_after: bool | None = None
-) -> None:
+        delete_after: bool | None = None,
+        return_msg: bool | None = None
+) -> Message | None:
     msg = await message.answer(
         text=text,
         reply_markup=reply_markup
@@ -25,6 +26,8 @@ async def message_response(
         await asyncio.sleep(delay)
     if delete_after:
         await message.delete()
+    if return_msg:
+        return msg
 
 
 async def edit_response(
