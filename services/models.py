@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 import datetime
 from aiogram.types import Message
+from exceptions import EmptyException
 
 
 @dataclass
@@ -43,5 +44,58 @@ class OrderForm:
     menu_date: datetime.date = field(default=None)
     raw_details: dict[int, DetailForm] = field(default_factory=dict)
     selected_details: list[DetailForm] = field(default_factory=list)
+
+
+class OrdersDLL:
+
+    def __init__(self) -> None:
+        self.data: list[OrderForm] | None = None
+        self.cur: int = 0
+        self.prev: int = 0
+        self.next: int = 0
+        self.size: int = 0
+
+    def _initialize_model(self):
+        if len(self.data) >= 1:
+            self.cur = 0
+            self.prev = len(self.data) - 1
+            self.next = 1
+        self.size = len(self.data)
+
+    def set_data(self, data: list[OrderForm]) -> None:
+        if not data:
+            raise EmptyException
+        self.data = data
+        self._initialize_model()
+
+    def turn_next(self) -> None:
+        if self.size == 0:
+            raise EmptyException
+        self.prev = self.cur
+        self.cur = self.next
+        self.next = (self.next + 1) % self.size
+
+    def turn_prev(self) -> None:
+        if self.size == 0:
+            raise EmptyException
+        self.next = self.cur
+        self.cur = self.prev
+        self.prev = (self.prev - 1) % self.size
+
+    def get_cur_data(self) -> OrderForm:
+        if self.size == 0:
+            raise EmptyException
+        return self.data[self.cur]
+
+    def delete_cur_data(self) -> OrderForm:
+        if self.size == 0:
+            raise EmptyException
+        self.size -= 1
+        result = self.data.pop(self.cur)
+        if self.size != 0:
+            self.prev = self.prev // self.size
+            self.cur = self.cur % self.size
+            self.next = self.next % self.size
+        return result
 
 

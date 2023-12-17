@@ -4,12 +4,13 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from sqlalchemy.ext.asyncio import AsyncSession
-from keyboards.inline import order_menu_kb, dish_count_kb_new, inline_confirm_cancel_kb, delete_order_kb_new
+from keyboards.inline import (order_menu_kb, dish_count_kb_new, inline_confirm_cancel_kb,
+                              delete_order_kb_new, delete_order_kb_new_new)
 from keyboards.reply import confirm_cancel_kb, back_to_initial_kb, initial_kb
 from states.order_states import NewOrderState, CancelOrderState
 from services.other_services import terminate_state_branch
 from exceptions import (InvalidPositionQuantity, ValidMenusNotExist, IsNotCustomer,
-                        ValidOrdersNotExist, NoPositionsSelected, InvalidOrder)
+                        ValidOrdersNotExist, NoPositionsSelected, InvalidOrder, EmptyException)
 from presentation.order_views import position_view_new, order_view
 from presentation.responses import message_response, callback_response, edit_response
 from middlewares.local_middlewares import ServiceManagerMiddleware
@@ -217,15 +218,14 @@ async def process_delete_order(
     text = 'Произошла ошибка. Нажмите на команду /start, чтобы попробовать снова.'
     reply_markup = None
     try:
-        orders = await manager.receive_customer_orders(session, message)
+        await manager.receive_customer_orders(session, message, state)
         await state.set_state(CancelOrderState.order_choices)
-        for order in orders:
-            await message_response(
-                message=message,
-                text=order_view(order),
-                reply_markup=delete_order_kb_new(order),
-                state=state
-            )
+        await message_response(
+            message=message,
+            text=order_view(manager.current_order()),
+            reply_markup=delete_order_kb_new_new(*manager.current_order_position()),
+            state=state
+        )
         text = ('Для возвращения в главное меню, после удаления выбранных заказов, нажмите на кнопку '
                 '<b><i>Вернуться в главное меню</i></b>')
         reply_markup = back_to_initial_kb()
@@ -234,7 +234,7 @@ async def process_delete_order(
                 'Для этого выберите в меню команду /start')
         reply_markup = ReplyKeyboardRemove()
     except ValidOrdersNotExist:
-        text = 'У вас нет активных заказов для удаления.'
+        text = 'У вас нет активных заказов.'
         reply_markup = initial_kb()
     finally:
         await message_response(
@@ -244,16 +244,41 @@ async def process_delete_order(
         )
 
 
-@router.callback_query(StateFilter(CancelOrderState.order_choices), F.data.startswith('order'))
+@router.callback_query(
+    StateFilter(CancelOrderState.order_choices), F.data.startswith('prev') | F.data.startswith('next'))
+async def process_listing_orders(
+        callback: CallbackQuery, state: FSMContext, manager: OrderManager):
+    await manager.process_scroll(callback, state)
+    await edit_response(
+        message=callback.message,
+        text=order_view(manager.current_order()),
+        reply_markup=delete_order_kb_new_new(*manager.current_order_position())
+    )
+
+
+@router.callback_query(StateFilter(CancelOrderState.order_choices), F.data.startswith('delete'))
 async def process_delete_order(
-        callback: CallbackQuery, session: AsyncSession, manager: OrderManager):
-    await manager.cancel_order(session, callback)
+        callback: CallbackQuery, session: AsyncSession, manager: OrderManager, state: FSMContext):
+    await manager.cancel_order(session, state)
     await callback_response(
         callback=callback,
         text='Заказ успешно удален',
         show_alert=True,
-        delete_after=True
     )
+    try:
+        await edit_response(
+            message=callback.message,
+            text=order_view(manager.current_order()),
+            reply_markup=delete_order_kb_new_new(*manager.current_order_position())
+        )
+    except EmptyException:
+        await message_response(
+            message=callback.message,
+            text='Все заказы удалены. Возврат в главное меню.',
+            reply_markup=initial_kb(),
+            delete_after=True
+        )
+        await terminate_state_branch(callback.message, state, add_last=False)
 
 
 @router.message(StateFilter(CancelOrderState.order_choices), F.text.endswith('Вернуться в главное меню'))

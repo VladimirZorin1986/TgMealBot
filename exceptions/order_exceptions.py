@@ -24,3 +24,7 @@ class NoPositionsSelected(Exception):
 
 class InvalidOrder(Exception):
     pass
+
+
+class EmptyException(Exception):
+    pass

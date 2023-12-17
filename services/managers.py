@@ -1,9 +1,9 @@
 import datetime
+from contextlib import suppress
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from services.models import OrderForm, UserForm, DetailForm
+from services.models import OrderForm, UserForm, DetailForm, OrdersDLL
 from database.managers import DatabaseManager, DbSessionManager
 from database.models import (Canteen, DeliveryPlace, Menu, Order, OrderDetail, Customer,
                              CustomerPermission, MenuPosition)
@@ -113,6 +113,7 @@ class OrderManager(ServiceManager):
 
     def __init__(self):
         super().__init__(OrderForm())
+        self._dll = OrdersDLL()
 
     async def start_process_new_order(
             self, session: AsyncSession, state: FSMContext, message: Message) -> None:
@@ -282,17 +283,34 @@ class OrderManager(ServiceManager):
         )
 
     async def receive_customer_orders(
-            self, session: AsyncSession, message: Message) -> list[OrderForm]:
+            self, session: AsyncSession, message: Message, state: FSMContext) -> None:
         db_session = self._db(session)
         customer = await self._get_customer_from_msg(db_session, message)
         valid_orders = [
             order for order in await customer.awaitable_attrs.orders if not order.sent_to_eis
         ]
         if valid_orders:
-            return [await self._create_order_form_from_order(db_session, order) for order in valid_orders]
+            data = [await self._create_order_form_from_order(db_session, order) for order in valid_orders]
+            self._dll.set_data(data)
+            await self._save(state)
         else:
             raise ValidOrdersNotExist
 
-    async def cancel_order(self, session: AsyncSession, callback: CallbackQuery) -> None:
+    def current_order(self) -> OrderForm:
+        return self._dll.get_cur_data()
+
+    def current_order_position(self) -> tuple[int, int, int]:
+        return self._dll.prev, self._dll.next, self._dll.size
+
+    async def process_scroll(self, callback: CallbackQuery, state: FSMContext) -> None:
+        if callback.data.startswith('next'):
+            self._dll.turn_next()
+        elif callback.data.startswith('prev'):
+            self._dll.turn_prev()
+        await self._save(state)
+
+    async def cancel_order(self, session: AsyncSession, state: FSMContext) -> None:
         db_session = self._db(session)
-        await db_session.delete_obj_by_id(Order, self._get_id_from_callback(callback))
+        order_form = self._dll.delete_cur_data()
+        await db_session.delete_obj_by_id(Order, order_form.order_id)
+        await self._save(state)

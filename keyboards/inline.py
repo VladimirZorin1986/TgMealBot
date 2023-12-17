@@ -7,7 +7,7 @@ from services.user_services import get_places_by_canteen, get_canteen_by_id
 from services.order_services import get_valid_menus_by_user, get_menu_positions_by_menu
 from keyboards.callbacks import (CanteenCallbackFactory, PlaceCallbackFactory, MenuCallbackFactory,
                                  PositionCallbackFactory, OrderCallbackFactory)
-from services.models import DetailForm, OrderForm
+from services.models import DetailForm, OrderForm, OrdersDLL
 
 
 def show_canteens_kb(canteens: list[Canteen]) -> InlineKeyboardMarkup:
@@ -143,6 +143,36 @@ def delete_order_kb_new(order_form: OrderForm) -> InlineKeyboardMarkup:
             ]
         ]
     )
+
+
+def delete_order_kb_new_new(prev_id: int, next_id: int, size: int) -> InlineKeyboardMarkup:
+    if size == 1:
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    text='❌ Удалить заказ',
+                    callback_data='delete_order'
+                )
+            ]
+        ]
+    else:
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    text=f'<< {prev_id + 1}/{size}',
+                    callback_data=f'prev'
+                ),
+                InlineKeyboardButton(
+                    text='❌ Удалить заказ',
+                    callback_data=f'delete_order'
+                ),
+                InlineKeyboardButton(
+                    text=f'>> {next_id + 1}/{size}',
+                    callback_data=f'next'
+                )
+            ]
+        ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
 def help_chapters_kb() -> InlineKeyboardMarkup:
