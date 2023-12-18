@@ -11,11 +11,3 @@ class PlaceCallbackFactory(CallbackData, prefix='place'):
 
 class MenuCallbackFactory(CallbackData, prefix='menu'):
     menu_id: int
-
-
-class PositionCallbackFactory(CallbackData, prefix='position'):
-    position_id: int
-
-
-class OrderCallbackFactory(CallbackData, prefix='order'):
-    order_id: int

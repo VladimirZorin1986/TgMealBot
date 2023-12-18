@@ -5,12 +5,10 @@ from aiogram.enums.parse_mode import ParseMode
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from config import load_config, on_startup
 from middlewares import DbSessionMiddleware
-from handlers.user_handlers import router as user_router
-from handlers.order_handlers import router as order_router
 from handlers.other_handlers import router as other_router
 from handlers.command_handlers import router as command_router
-from handlers.new_order_handlers import router as test_order_router
-from handlers.new_user_handlers import router as test_user_router
+from handlers.order_handlers import router as test_order_router
+from handlers.user_handlers import router as test_user_router
 
 logger = logging.getLogger(__name__)
 

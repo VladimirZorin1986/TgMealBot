@@ -4,7 +4,7 @@ from aiogram import Bot
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
-from utils.service_models import TrackCallback
+from services.models import TrackCallback
 
 
 async def add_message_to_track(message: Message, state: FSMContext) -> None:
