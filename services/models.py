@@ -95,9 +95,9 @@ class OrdersDLL:
         self.size -= 1
         result = self.data.pop(self.cur)
         if self.size != 0:
-            self.prev = self.prev // self.size
             self.cur = self.cur % self.size
-            self.next = self.next % self.size
+            self.prev = (self.cur - 1) % self.size
+            self.next = (self.cur + 1) % self.size
         return result
 
 

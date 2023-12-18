@@ -145,7 +145,7 @@ def delete_order_kb_new(order_form: OrderForm) -> InlineKeyboardMarkup:
     )
 
 
-def delete_order_kb_new_new(cur_id: int, size: int) -> InlineKeyboardMarkup:
+def delete_order_kb_new_new(prev_id: int, next_id: int, size: int) -> InlineKeyboardMarkup:
     if size == 1:
         keyboard = [
             [
@@ -159,16 +159,16 @@ def delete_order_kb_new_new(cur_id: int, size: int) -> InlineKeyboardMarkup:
         keyboard = [
             [
                 InlineKeyboardButton(
-                    text=f'⏪',
-                    callback_data=f'prev'
+                    text=f'⏪ ({prev_id + 1}/{size})',
+                    callback_data='prev'
                 ),
                 InlineKeyboardButton(
-                    text=f'❌ Удалить ({cur_id + 1}/{size})',
-                    callback_data=f'delete_order'
+                    text='❌ Удалить',
+                    callback_data='delete_order'
                 ),
                 InlineKeyboardButton(
-                    text=f'⏩',
-                    callback_data=f'next'
+                    text=f'⏩ ({next_id + 1}/{size})',
+                    callback_data='next'
                 )
             ]
         ]

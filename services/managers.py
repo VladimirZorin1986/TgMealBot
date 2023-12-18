@@ -303,6 +303,7 @@ class OrderManager(ServiceManager):
             amt=order.amt,
             canteen_name=canteen.name,
             place_name=place.name,
+            custom_menu=place.custom_menu,
             menu_name=menu.name,
             menu_date=menu.date,
             selected_details=details
@@ -325,8 +326,8 @@ class OrderManager(ServiceManager):
     def current_order(self) -> OrderForm:
         return self._dll.get_cur_data()
 
-    def current_order_position(self) -> tuple[int, int]:
-        return self._dll.cur, self._dll.size
+    def current_order_position(self) -> tuple[int, int, int]:
+        return self._dll.prev, self._dll.next, self._dll.size
 
     async def process_scroll(self, callback: CallbackQuery, state: FSMContext) -> None:
         if callback.data.startswith('next'):
