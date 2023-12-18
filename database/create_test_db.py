@@ -180,9 +180,9 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                         Menu(
                             id=1,
                             name='Меню на завтрак',
-                            date=datetime.date.fromisoformat('2023-12-20'),
+                            date=datetime.date.fromisoformat('2023-12-21'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-18'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
                             canteen_id=4,
                             positions=[
                                 MenuPosition(
@@ -202,6 +202,63 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                                     name='Чай с сахаром',
                                     weight='100/50',
                                     cost=25.45
+                                ),
+                                MenuPosition(
+                                    id=4,
+                                    name='Лагман по-узбекски',
+                                    weight='150',
+                                    cost=200.10,
+                                    complex_qty=1
+                                ),
+                                MenuPosition(
+                                    id=5,
+                                    name='Фреш мандариновый',
+                                    weight='100/50',
+                                    cost=15.50,
+                                    complex_qty=2
+                                )
+                            ],
+                            orders=[]
+                        ),
+                        Menu(
+                            id=2,
+                            name='Меню на завтрак',
+                            date=datetime.date.fromisoformat('2023-12-22'),
+                            beg_time=datetime.datetime.fromisoformat('2023-12-05'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            canteen_id=4,
+                            positions=[
+                                MenuPosition(
+                                    id=6,
+                                    name='Блинчики со сметаной',
+                                    weight='200',
+                                    cost=120.00
+                                ),
+                                MenuPosition(
+                                    id=7,
+                                    name='Яичница',
+                                    weight='150',
+                                    cost=80.50
+                                ),
+                                MenuPosition(
+                                    id=8,
+                                    name='Чай с сахаром',
+                                    weight='100/50',
+                                    cost=25.45
+                                ),
+                                MenuPosition(
+                                    id=9,
+                                    name='Лагман по-узбекски',
+                                    weight='150',
+                                    cost=200.10,
+                                    complex_qty=1
+                                ),
+                                MenuPosition(
+                                    id=10,
+                                    name='Фреш мандариновый',
+                                    weight='100/50',
+                                    cost=15.50,
+                                    complex_qty=2
                                 )
                             ],
                             orders=[]
@@ -212,59 +269,173 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                     name='обед',
                     menus=[
                         Menu(
-                            id=2,
+                            id=3,
                             name='Меню на обед',
-                            date=datetime.date.fromisoformat('2023-12-20'),
+                            date=datetime.date.fromisoformat('2023-12-21'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-18'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
                             canteen_id=4,
                             positions=[
                                 MenuPosition(
-                                    id=4,
+                                    id=11,
                                     name='Борщ со сметаной',
                                     weight='200',
                                     cost=110.00
                                 ),
                                 MenuPosition(
-                                    id=5,
+                                    id=12,
                                     name='Котлеты с пюре',
                                     weight='150',
                                     cost=110.00
                                 ),
                                 MenuPosition(
-                                    id=6,
+                                    id=13,
                                     name='Кофе черный',
                                     weight='100/50',
                                     cost=40.50
+                                ),
+                                MenuPosition(
+                                    id=14,
+                                    name='Лагман по-узбекски',
+                                    weight='150',
+                                    cost=200.10,
+                                    complex_qty=1
+                                ),
+                                MenuPosition(
+                                    id=15,
+                                    name='Фреш мандариновый',
+                                    weight='100/50',
+                                    cost=15.50,
+                                    complex_qty=2
                                 )
                             ],
                             orders=[]
                         ),
                         Menu(
-                            id=3,
+                            id=4,
                             name='Меню на обед',
-                            date=datetime.date.fromisoformat('2023-12-20'),
+                            date=datetime.date.fromisoformat('2023-12-22'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-18'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            canteen_id=4,
+                            positions=[
+                                MenuPosition(
+                                    id=16,
+                                    name='Борщ со сметаной',
+                                    weight='200',
+                                    cost=110.00
+                                ),
+                                MenuPosition(
+                                    id=17,
+                                    name='Котлеты с пюре',
+                                    weight='150',
+                                    cost=110.00
+                                ),
+                                MenuPosition(
+                                    id=18,
+                                    name='Кофе черный',
+                                    weight='100/50',
+                                    cost=40.50
+                                ),
+                                MenuPosition(
+                                    id=19,
+                                    name='Лагман по-узбекски',
+                                    weight='150',
+                                    cost=200.10,
+                                    complex_qty=1
+                                ),
+                                MenuPosition(
+                                    id=20,
+                                    name='Фреш мандариновый',
+                                    weight='100/50',
+                                    cost=15.50,
+                                    complex_qty=2
+                                )
+                            ],
+                            orders=[]
+                        ),
+                        Menu(
+                            id=5,
+                            name='Меню на обед',
+                            date=datetime.date.fromisoformat('2023-12-21'),
+                            beg_time=datetime.datetime.fromisoformat('2023-12-05'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
                             canteen_id=2,
                             positions=[
                                 MenuPosition(
-                                    id=7,
+                                    id=21,
                                     name='Щи зеленые',
                                     weight='200',
                                     cost=120.00
                                 ),
                                 MenuPosition(
-                                    id=8,
+                                    id=22,
                                     name='Биточки с рисом',
                                     weight='150',
                                     cost=80.50
                                 ),
                                 MenuPosition(
-                                    id=9,
+                                    id=23,
                                     name='Капучино',
                                     weight='100/50',
                                     cost=25.45
+                                ),
+                                MenuPosition(
+                                    id=24,
+                                    name='Лагман по-узбекски',
+                                    weight='150',
+                                    cost=200.10,
+                                    complex_qty=1
+                                ),
+                                MenuPosition(
+                                    id=25,
+                                    name='Фреш мандариновый',
+                                    weight='100/50',
+                                    cost=15.50,
+                                    complex_qty=2
+                                )
+                            ],
+                            orders=[]
+                        ),
+                        Menu(
+                            id=6,
+                            name='Меню на обед',
+                            date=datetime.date.fromisoformat('2023-12-22'),
+                            beg_time=datetime.datetime.fromisoformat('2023-12-05'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            canteen_id=2,
+                            positions=[
+                                MenuPosition(
+                                    id=26,
+                                    name='Щи зеленые',
+                                    weight='200',
+                                    cost=120.00
+                                ),
+                                MenuPosition(
+                                    id=27,
+                                    name='Биточки с рисом',
+                                    weight='150',
+                                    cost=80.50
+                                ),
+                                MenuPosition(
+                                    id=28,
+                                    name='Капучино',
+                                    weight='100/50',
+                                    cost=25.45
+                                ),
+                                MenuPosition(
+                                    id=29,
+                                    name='Лагман по-узбекски',
+                                    weight='150',
+                                    cost=200.10,
+                                    complex_qty=1
+                                ),
+                                MenuPosition(
+                                    id=30,
+                                    name='Фреш мандариновый',
+                                    weight='100/50',
+                                    cost=15.50,
+                                    complex_qty=2
                                 )
                             ],
                             orders=[]
@@ -275,40 +446,83 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                     name='ужин',
                     menus=[
                         Menu(
-                            id=4,
+                            id=7,
                             name='Меню на ужин',
-                            date=datetime.date.fromisoformat('2023-12-20'),
+                            date=datetime.date.fromisoformat('2023-12-21'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-18'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
                             canteen_id=4,
                             positions=[
                                 MenuPosition(
-                                    id=10,
+                                    id=31,
                                     name='Салат витаминный',
                                     weight='200',
                                     cost=100.80
                                 ),
                                 MenuPosition(
-                                    id=11,
+                                    id=32,
                                     name='Говядина по-испански',
                                     weight='150',
                                     cost=200.10
                                 ),
                                 MenuPosition(
-                                    id=12,
+                                    id=33,
                                     name='Компот из сухофруктов',
                                     weight='100/50',
                                     cost=15.50
                                 ),
                                 MenuPosition(
-                                    id=13,
+                                    id=34,
                                     name='Лагман по-узбекски',
                                     weight='150',
                                     cost=200.10,
                                     complex_qty=1
                                 ),
                                 MenuPosition(
-                                    id=14,
+                                    id=35,
+                                    name='Фреш мандариновый',
+                                    weight='100/50',
+                                    cost=15.50,
+                                    complex_qty=2
+                                )
+                            ],
+                            orders=[]
+                        ),
+                        Menu(
+                            id=8,
+                            name='Меню на ужин',
+                            date=datetime.date.fromisoformat('2023-12-22'),
+                            beg_time=datetime.datetime.fromisoformat('2023-12-05'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            canteen_id=4,
+                            positions=[
+                                MenuPosition(
+                                    id=36,
+                                    name='Салат витаминный',
+                                    weight='200',
+                                    cost=100.80
+                                ),
+                                MenuPosition(
+                                    id=37,
+                                    name='Говядина по-испански',
+                                    weight='150',
+                                    cost=200.10
+                                ),
+                                MenuPosition(
+                                    id=38,
+                                    name='Компот из сухофруктов',
+                                    weight='100/50',
+                                    cost=15.50
+                                ),
+                                MenuPosition(
+                                    id=39,
+                                    name='Лагман по-узбекски',
+                                    weight='150',
+                                    cost=200.10,
+                                    complex_qty=1
+                                ),
+                                MenuPosition(
+                                    id=40,
                                     name='Фреш мандариновый',
                                     weight='100/50',
                                     cost=15.50,

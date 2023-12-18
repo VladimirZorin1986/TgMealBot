@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from decimal import Decimal
 import datetime
+from typing import Generator
 from aiogram.types import Message
 from exceptions import EmptyException
 
@@ -43,6 +44,7 @@ class OrderForm:
     menu_name: str = field(default=None)
     menu_date: datetime.date = field(default=None)
     raw_details: dict[int, DetailForm] = field(default_factory=dict)
+    temp_details: Generator[DetailForm, None, None] = field(default=None)
     selected_details: list[DetailForm] = field(default_factory=list)
 
 

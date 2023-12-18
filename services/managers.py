@@ -1,5 +1,6 @@
 import datetime
-from contextlib import suppress
+from typing import Generator, Any, Iterable
+from itertools import islice
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -71,6 +72,13 @@ class UserManager(ServiceManager):
             return sorted(valid_canteen_ids)
         raise ValidCanteensNotExist
 
+    def is_auth(self) -> bool:
+        return bool(self._model.place_id and self._model.tg_id)
+
+    async def receive_place(self, session: AsyncSession) -> DeliveryPlace:
+        db_session = self._db(session)
+        return await db_session.get_obj_by_id(DeliveryPlace, self._model.place_id)
+
     def allowed_several_canteens(self) -> bool:
         return len(self._model.canteen_ids) > 1
 
@@ -114,6 +122,7 @@ class OrderManager(ServiceManager):
     def __init__(self):
         super().__init__(OrderForm())
         self._dll = OrdersDLL()
+        self._offset = 3
 
     async def start_process_new_order(
             self, session: AsyncSession, state: FSMContext, message: Message) -> None:
@@ -166,12 +175,29 @@ class OrderManager(ServiceManager):
         return raw_details
 
     async def receive_menu_positions(
-            self, session: AsyncSession, callback: CallbackQuery, state: FSMContext) -> list[DetailForm]:
+            self, session: AsyncSession, callback: CallbackQuery, state: FSMContext) -> tuple[DetailForm]:
         db_session = self._db(session)
         menu = await self._get_menu_info(db_session, self._get_id_from_callback(callback))
         raw_details = await self._get_raw_details_from_menu(menu)
+        temp_details = self._chunked_by_offset(raw_details.values(), self._offset)
+        self._set_attrs(temp_details=temp_details)
+        result = next(self._model.temp_details)
         await self._save(state)
-        return list(raw_details.values())
+        return result
+
+    @staticmethod
+    def _chunked_by_offset(iterable: Iterable, offset: int) -> Generator[Any, None, None]:
+        it = iter(iterable)
+        while batch := tuple(islice(it, offset)):
+            yield batch
+
+    async def continue_receiving_positions(self, state: FSMContext) -> tuple[DetailForm]:
+        try:
+            result = next(self._model.temp_details)
+            await self._save(state)
+            return result
+        except StopIteration:
+            raise EmptyException
 
     def complex_menu(self) -> bool:
         return not self._model.custom_menu

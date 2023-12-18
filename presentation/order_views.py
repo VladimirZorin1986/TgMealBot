@@ -34,7 +34,8 @@ def order_view(order_form: OrderForm):
     for row in rows:
         body.add_row(row, divider=True)
 
-    head_list = [f'{order_form.menu_name}\n',
+    menu_head_name = ' '.join(['Заказное' if order_form.custom_menu else 'Комплексное', order_form.menu_name.lower()])
+    head_list = [f'{menu_head_name}\n',
                  f'Дата меню:\n{order_form.menu_date.strftime("%d.%m.%Y")}',
                  f'Место доставки:\n{order_form.place_name} ({order_form.canteen_name})']
     if order_form.created_at:
