@@ -1,6 +1,15 @@
 from aiogram import Bot
 from aiogram.types import BotCommand
 
+DESCRIPTION = '''
+Добро пожаловать в бот заказа еды в столовой ГК "ОТЭКО".
+Бот предназначен для удаленного формирования заказов для столовой предприятия.
+Для начала работы необходимо авторизоваться.
+Убедитесь, что вы являетесь действующим заказчиком столовой 
+и ваш номер телефона с приложением Telegram установлен основным контактом в кадровой службе.
+Для продуктивной работы с ботом настоятельно рекомендуем ознакомиться с разделом /help .
+'''
+
 
 async def set_main_menu(bot: Bot):
 
@@ -24,3 +33,4 @@ async def set_main_menu(bot: Bot):
 
 async def on_startup(bot: Bot):
     await set_main_menu(bot)
+    await bot.set_my_description(DESCRIPTION)

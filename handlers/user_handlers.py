@@ -9,7 +9,7 @@ from keyboards.inline import show_canteens_kb, show_places_kb_new
 from states.user_states import AuthState, ChangeDeliveryPlace
 from services.other_services import (terminate_state_branch, set_track_callback,
                                      update_track_callback, get_track_callback)
-from middlewares.local_middlewares import ServiceManagerMiddleware
+from middlewares import ServiceManagerMiddleware
 from services.managers import UserManager
 from presentation.responses import message_response, callback_response, edit_response
 from presentation.user_views import old_place_view

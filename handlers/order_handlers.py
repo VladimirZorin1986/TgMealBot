@@ -12,7 +12,7 @@ from exceptions import (InvalidPositionQuantity, ValidMenusNotExist, IsNotCustom
                         ValidOrdersNotExist, NoPositionsSelected, InvalidOrder, EmptyException)
 from presentation.order_views import position_view_new, order_view
 from presentation.responses import message_response, callback_response, edit_response
-from middlewares.local_middlewares import ServiceManagerMiddleware
+from middlewares import ServiceManagerMiddleware
 from services.managers import OrderManager
 
 router = Router()

@@ -1,1 +1,2 @@
 from .global_middlewares import DbSessionMiddleware
+from .local_middlewares import ServiceManagerMiddleware
