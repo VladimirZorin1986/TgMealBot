@@ -180,9 +180,9 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                         Menu(
                             id=1,
                             name='Меню на завтрак',
-                            date=datetime.date.fromisoformat('2023-12-21'),
+                            date=datetime.date.fromisoformat('2023-12-23'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-22'),
                             canteen_id=4,
                             positions=[
                                 MenuPosition(
@@ -223,9 +223,9 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                         Menu(
                             id=2,
                             name='Меню на завтрак',
-                            date=datetime.date.fromisoformat('2023-12-22'),
+                            date=datetime.date.fromisoformat('2023-12-24'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-23'),
                             canteen_id=4,
                             positions=[
                                 MenuPosition(
@@ -271,9 +271,9 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                         Menu(
                             id=3,
                             name='Меню на обед',
-                            date=datetime.date.fromisoformat('2023-12-21'),
+                            date=datetime.date.fromisoformat('2023-12-23'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-22'),
                             canteen_id=4,
                             positions=[
                                 MenuPosition(
@@ -314,9 +314,9 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                         Menu(
                             id=4,
                             name='Меню на обед',
-                            date=datetime.date.fromisoformat('2023-12-22'),
+                            date=datetime.date.fromisoformat('2023-12-24'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-23'),
                             canteen_id=4,
                             positions=[
                                 MenuPosition(
@@ -357,9 +357,9 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                         Menu(
                             id=5,
                             name='Меню на обед',
-                            date=datetime.date.fromisoformat('2023-12-21'),
+                            date=datetime.date.fromisoformat('2023-12-23'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-22'),
                             canteen_id=2,
                             positions=[
                                 MenuPosition(
@@ -400,9 +400,9 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                         Menu(
                             id=6,
                             name='Меню на обед',
-                            date=datetime.date.fromisoformat('2023-12-22'),
+                            date=datetime.date.fromisoformat('2023-12-24'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-23'),
                             canteen_id=2,
                             positions=[
                                 MenuPosition(
@@ -448,9 +448,9 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                         Menu(
                             id=7,
                             name='Меню на ужин',
-                            date=datetime.date.fromisoformat('2023-12-21'),
+                            date=datetime.date.fromisoformat('2023-12-23'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-22'),
                             canteen_id=4,
                             positions=[
                                 MenuPosition(
@@ -491,9 +491,9 @@ async def insert_objects(async_session: async_sessionmaker[AsyncSession]) -> Non
                         Menu(
                             id=8,
                             name='Меню на ужин',
-                            date=datetime.date.fromisoformat('2023-12-22'),
+                            date=datetime.date.fromisoformat('2023-12-24'),
                             beg_time=datetime.datetime.fromisoformat('2023-12-05'),
-                            end_time=datetime.datetime.fromisoformat('2023-12-20'),
+                            end_time=datetime.datetime.fromisoformat('2023-12-23'),
                             canteen_id=4,
                             positions=[
                                 MenuPosition(
