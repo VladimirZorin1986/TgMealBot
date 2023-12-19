@@ -200,6 +200,7 @@ async def process_delete_order(
         message: Message, session: AsyncSession, state: FSMContext, manager: OrderManager) -> None:
     text = 'Произошла ошибка. Нажмите на команду /start, чтобы попробовать снова.'
     reply_markup = None
+    in_state = False
     try:
         await manager.receive_customer_orders(session, message, state)
         await state.set_state(CancelOrderState.order_choices)
@@ -212,6 +213,7 @@ async def process_delete_order(
         text = ('Для возвращения в главное меню, после удаления выбранных заказов, нажмите на кнопку '
                 '<b><i>Вернуться в главное меню</i></b>')
         reply_markup = back_to_initial_kb()
+        in_state = True
     except IsNotCustomer:
         text = ('Вас больше нет в списке заказчиков. Пройдите повторную авторизацию. '
                 'Для этого выберите в меню команду /start')
@@ -223,7 +225,8 @@ async def process_delete_order(
         await message_response(
             message=message,
             text=text,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
+            state=state if in_state else None
         )
 
 

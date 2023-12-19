@@ -7,8 +7,8 @@ from config import load_config, on_startup
 from middlewares import DbSessionMiddleware
 from handlers.other_handlers import router as other_router
 from handlers.command_handlers import router as command_router
-from handlers.order_handlers import router as test_order_router
-from handlers.user_handlers import router as test_user_router
+from handlers.order_handlers import router as order_router
+from handlers.user_handlers import router as user_router
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +35,8 @@ async def main():
     dp.update.middleware(DbSessionMiddleware(session_pool=session_maker))
 
     dp.include_router(command_router)
-    dp.include_router(test_user_router)
-    dp.include_router(test_order_router)
+    dp.include_router(user_router)
+    dp.include_router(order_router)
     dp.include_router(other_router)
 
     await bot.delete_webhook(drop_pending_updates=True)
