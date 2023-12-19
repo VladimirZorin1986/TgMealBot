@@ -554,7 +554,7 @@ async def async_main() -> None:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    await insert_objects(async_session)
+    # await insert_objects(async_session)
 
     # for AsyncEngine created in function scope, close and
     # clean-up pooled connections
