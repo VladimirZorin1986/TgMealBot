@@ -80,6 +80,7 @@ async def new_order_positions(
         await message_response(
             message=callback.message,
             text='После добавления блюд нажмите <b><i>Подтвердить</i></b>, чтобы сохранить заказ. '
+                 'Для продолжения вывода позиций меню нажмите на кнопку <b><i>Продолжить список</i></b>.'
                  'Для отмены заказа нажмите <b><i>Отменить</i></b>.',
             reply_markup=confirm_cancel_kb(),
             state=state
