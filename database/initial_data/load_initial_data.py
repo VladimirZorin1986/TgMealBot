@@ -3,7 +3,7 @@ import datetime
 import csv
 from decimal import Decimal
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from database.models import Canteen, DeliveryPlace, Customer, Menu, MenuPosition, MealType, Base, CustomerPermission
+from database.models import Canteen, DeliveryPlace, Customer, Menu, MenuPosition, MealType, CustomerPermission
 
 
 async def async_main() -> None:

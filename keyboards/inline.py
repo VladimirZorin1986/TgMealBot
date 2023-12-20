@@ -2,7 +2,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from database.models import Canteen, Menu, DeliveryPlace
 from keyboards.callbacks import CanteenCallbackFactory, PlaceCallbackFactory, MenuCallbackFactory
-from services.models import DetailForm
+from services.models import DetailForm, DataPosition
 
 
 def show_canteens_kb(canteens: list[Canteen]) -> InlineKeyboardMarkup:
@@ -75,59 +75,48 @@ def inline_confirm_cancel_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=kb)
 
 
-def delete_order_kb_new_new(prev_id: int, cur_id: int, next_id: int, size: int) -> InlineKeyboardMarkup:
-    if size == 1:
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    text='❌ Удалить',
-                    callback_data='delete_order'
-                )
-            ]
-        ]
+def order_delete_scroll_kb(position: DataPosition) -> InlineKeyboardMarkup:
+    return default_scroll_kb(
+        position=position,
+        middle_button=InlineKeyboardButton(
+            text='❌ Удалить',
+            callback_data='delete_order'
+        ),
+        prev_button_text=f'⏪ ({position.prev_ind + 1}/{position.size})',
+        next_button_text=f'⏩ ({position.next_ind + 1}/{position.size})'
+    )
+
+
+def order_view_scroll_kb(position: DataPosition) -> InlineKeyboardMarkup:
+    return default_scroll_kb(
+        position=position,
+        middle_button=InlineKeyboardButton(
+            text=f'📃 {position.cur_ind + 1}/{position.size}',
+            callback_data='no action'
+        ),
+        prev_button_text='⏪',
+        next_button_text='⏩'
+    )
+
+
+def default_scroll_kb(
+        position: DataPosition,
+        middle_button: InlineKeyboardButton,
+        prev_button_text: str,
+        next_button_text: str
+) -> InlineKeyboardMarkup:
+    if position.size == 1:
+        keyboard = [[middle_button]]
     else:
         keyboard = [
             [
                 InlineKeyboardButton(
-                    text=f'⏪ ({prev_id + 1}/{size})',
+                    text=prev_button_text,
                     callback_data='prev'
                 ),
+                middle_button,
                 InlineKeyboardButton(
-                    text='❌ Удалить',
-                    callback_data='delete_order'
-                ),
-                InlineKeyboardButton(
-                    text=f'⏩ ({next_id + 1}/{size})',
-                    callback_data='next'
-                )
-            ]
-        ]
-    return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-
-def order_view_scroll_kb(prev_id: int, cur_id: int, next_id: int, size: int) -> InlineKeyboardMarkup:
-    if size == 1:
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    text=f'{cur_id + 1}/{size}',
-                    callback_data='no action'
-                )
-            ]
-        ]
-    else:
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    text='⏪',
-                    callback_data='prev'
-                ),
-                InlineKeyboardButton(
-                    text=f'{cur_id + 1}/{size}',
-                    callback_data='no_action'
-                ),
-                InlineKeyboardButton(
-                    text='⏩',
+                    text=next_button_text,
                     callback_data='next'
                 )
             ]

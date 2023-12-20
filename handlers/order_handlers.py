@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from sqlalchemy.ext.asyncio import AsyncSession
 from keyboards.inline import (order_menu_kb, dish_count_kb_new, inline_confirm_cancel_kb,
-                              delete_order_kb_new_new, order_view_scroll_kb)
+                              order_delete_scroll_kb, order_view_scroll_kb)
 from keyboards.reply import confirm_cancel_kb, back_to_initial_kb, initial_kb
 from states.order_states import NewOrderState, CancelOrderState, OrdersViewState
 from services.other_services import terminate_state_branch
@@ -198,72 +198,32 @@ async def process_cancel_new_order(callback: CallbackQuery, state: FSMContext) -
 
 
 @router.message(StateFilter(default_state), F.text.endswith('Просмотр заказов'))
-async def process_view_orders(
+async def process_orders_history(
         message: Message, session: AsyncSession, state: FSMContext, manager: OrderManager) -> None:
-    text = 'Произошла ошибка. Нажмите на команду /start, чтобы попробовать снова.'
-    reply_markup = None
-    in_state = False
-    try:
-        await manager.receive_all_customer_orders(session, message, state)
-        await state.set_state(OrdersViewState.order_views)
-        await message_response(
-            message=message,
-            text=order_view(manager.current_order()),
-            reply_markup=order_view_scroll_kb(*manager.current_order_position()),
-            state=state
-        )
-        text = 'Для возвращения в главное меню нажмите на кнопку <b><i>Вернуться в главное меню</i></b>'
-        reply_markup = back_to_initial_kb()
-        in_state = True
-    except IsNotCustomer:
-        text = ('Вас больше нет в списке заказчиков. Пройдите повторную авторизацию. '
-                'Для этого выберите в меню команду /start')
-        reply_markup = ReplyKeyboardRemove()
-    except OrdersNotExist:
-        text = 'У вас нет пока нет заказов.'
-        reply_markup = initial_kb()
-    finally:
-        await message_response(
-            message=message,
-            text=text,
-            reply_markup=reply_markup,
-            state=state if in_state else None
-        )
+    await process_view_orders(
+        message=message,
+        session=session,
+        state=state,
+        manager=manager,
+        no_orders_text='У вас пока нет заказов.',
+        new_state=OrdersViewState.order_views,
+        markup_func=order_view_scroll_kb
+    )
 
 
 @router.message(StateFilter(default_state), F.text.endswith('Удаление активных заказов'))
 async def process_delete_order(
         message: Message, session: AsyncSession, state: FSMContext, manager: OrderManager) -> None:
-    text = 'Произошла ошибка. Нажмите на команду /start, чтобы попробовать снова.'
-    reply_markup = None
-    in_state = False
-    try:
-        await manager.receive_valid_customer_orders(session, message, state)
-        await state.set_state(CancelOrderState.order_choices)
-        await message_response(
-            message=message,
-            text=order_view(manager.current_order()),
-            reply_markup=delete_order_kb_new_new(*manager.current_order_position()),
-            state=state
-        )
-        text = ('Для возвращения в главное меню, после удаления выбранных заказов, нажмите на кнопку '
-                '<b><i>Вернуться в главное меню</i></b>')
-        reply_markup = back_to_initial_kb()
-        in_state = True
-    except IsNotCustomer:
-        text = ('Вас больше нет в списке заказчиков. Пройдите повторную авторизацию. '
-                'Для этого выберите в меню команду /start')
-        reply_markup = ReplyKeyboardRemove()
-    except OrdersNotExist:
-        text = 'У вас нет активных заказов.'
-        reply_markup = initial_kb()
-    finally:
-        await message_response(
-            message=message,
-            text=text,
-            reply_markup=reply_markup,
-            state=state if in_state else None
-        )
+    await process_view_orders(
+        message=message,
+        session=session,
+        state=state,
+        manager=manager,
+        no_orders_text='У вас нет активных заказов.',
+        new_state=CancelOrderState.order_choices,
+        markup_func=order_delete_scroll_kb,
+        valid_orders=True
+    )
 
 
 @router.callback_query(
@@ -313,9 +273,9 @@ async def edit_order_response(callback: CallbackQuery, state: FSMContext, manage
     current_state = await state.get_state()
     match current_state:
         case OrdersViewState.order_views:
-            markup = order_view_scroll_kb(*manager.current_order_position())
+            markup = order_view_scroll_kb(manager.current_order_position())
         case CancelOrderState.order_choices:
-            markup = delete_order_kb_new_new(*manager.current_order_position())
+            markup = order_delete_scroll_kb(manager.current_order_position())
     await edit_response(
         message=callback.message,
         text=order_view(manager.current_order()),
@@ -346,4 +306,45 @@ async def process_positions_response(message: Message, state: FSMContext, positi
             reply_markup=dish_count_kb_new(position),
             state=state,
             delay=0.1
+        )
+
+
+async def process_view_orders(
+        message: Message,
+        session: AsyncSession,
+        state: FSMContext,
+        manager: OrderManager,
+        no_orders_text: str,
+        new_state,
+        markup_func,
+        valid_orders: bool = False
+) -> None:
+    text = 'Произошла ошибка. Нажмите на команду /start, чтобы попробовать снова.'
+    reply_markup = None
+    in_state = False
+    try:
+        await manager.receive_customer_orders(session, message, state, valid=valid_orders)
+        await state.set_state(new_state)
+        await message_response(
+            message=message,
+            text=order_view(manager.current_order()),
+            reply_markup=markup_func(manager.current_order_position()),
+            state=state
+        )
+        text = 'Для возвращения в главное меню нажмите на кнопку <b><i>Вернуться в главное меню</i></b>'
+        reply_markup = back_to_initial_kb()
+        in_state = True
+    except IsNotCustomer:
+        text = ('Вас больше нет в списке заказчиков. Пройдите повторную авторизацию. '
+                'Для этого выберите в меню команду /start')
+        reply_markup = ReplyKeyboardRemove()
+    except OrdersNotExist:
+        text = no_orders_text
+        reply_markup = initial_kb()
+    finally:
+        await message_response(
+            message=message,
+            text=text,
+            reply_markup=reply_markup,
+            state=state if in_state else None
         )

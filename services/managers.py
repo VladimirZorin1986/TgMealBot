@@ -4,7 +4,7 @@ from itertools import islice
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.models import OrderForm, UserForm, DetailForm, OrdersDLL
+from services.models import OrderForm, UserForm, DetailForm, OrdersDLL, DataPosition
 from database.managers import DatabaseManager, DbSessionManager
 from database.models import (Canteen, DeliveryPlace, Menu, Order, OrderDetail, Customer,
                              CustomerPermission, MenuPosition)
@@ -309,25 +309,14 @@ class OrderManager(ServiceManager):
             selected_details=details
         )
 
-    async def receive_valid_customer_orders(
-            self, session: AsyncSession, message: Message, state: FSMContext) -> None:
+    async def receive_customer_orders(
+            self, session: AsyncSession, message: Message, state: FSMContext, valid: bool) -> None:
         db_session = self._db(session)
         customer = await self._get_customer_from_msg(db_session, message)
-        valid_orders = [
-            order for order in await customer.awaitable_attrs.orders if not order.sent_to_eis
-        ]
-        if valid_orders:
-            data = [await self._create_order_form_from_order(db_session, order) for order in valid_orders]
-            self._dll.set_data(data)
-            await self._save(state)
+        if valid:
+            orders = [order for order in await customer.awaitable_attrs.orders if not order.sent_to_eis]
         else:
-            raise OrdersNotExist
-
-    async def receive_all_customer_orders(
-            self, session: AsyncSession, message: Message, state: FSMContext) -> None:
-        db_session = self._db(session)
-        customer = await self._get_customer_from_msg(db_session, message)
-        orders = await customer.awaitable_attrs.orders
+            orders = await customer.awaitable_attrs.orders
         if orders:
             data = [await self._create_order_form_from_order(db_session, order) for order in orders]
             self._dll.set_data(data)
@@ -338,8 +327,8 @@ class OrderManager(ServiceManager):
     def current_order(self) -> OrderForm:
         return self._dll.get_cur_data()
 
-    def current_order_position(self) -> tuple[int, int, int, int]:
-        return self._dll.prev, self._dll.cur, self._dll.next, self._dll.size
+    def current_order_position(self) -> DataPosition:
+        return self._dll.data_position
 
     async def process_scroll(self, callback: CallbackQuery, state: FSMContext) -> None:
         if callback.data.startswith('next'):
