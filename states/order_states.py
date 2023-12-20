@@ -9,3 +9,7 @@ class NewOrderState(StatesGroup):
 
 class CancelOrderState(StatesGroup):
     order_choices = State()
+
+
+class OrdersViewState(StatesGroup):
+    order_views = State()

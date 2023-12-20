@@ -4,12 +4,13 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from sqlalchemy.ext.asyncio import AsyncSession
-from keyboards.inline import order_menu_kb, dish_count_kb_new, inline_confirm_cancel_kb, delete_order_kb_new_new
+from keyboards.inline import (order_menu_kb, dish_count_kb_new, inline_confirm_cancel_kb,
+                              delete_order_kb_new_new, order_view_scroll_kb)
 from keyboards.reply import confirm_cancel_kb, back_to_initial_kb, initial_kb
-from states.order_states import NewOrderState, CancelOrderState
+from states.order_states import NewOrderState, CancelOrderState, OrdersViewState
 from services.other_services import terminate_state_branch
 from exceptions import (InvalidPositionQuantity, ValidMenusNotExist, IsNotCustomer,
-                        ValidOrdersNotExist, NoPositionsSelected, InvalidOrder, EmptyException)
+                        OrdersNotExist, NoPositionsSelected, InvalidOrder, EmptyException)
 from presentation.order_views import position_view_new, order_view
 from presentation.responses import message_response, callback_response, edit_response
 from middlewares import ServiceManagerMiddleware
@@ -196,14 +197,48 @@ async def process_cancel_new_order(callback: CallbackQuery, state: FSMContext) -
     )
 
 
-@router.message(StateFilter(default_state), F.text.endswith('Просмотр/Удаление заказов'))
+@router.message(StateFilter(default_state), F.text.endswith('Просмотр заказов'))
+async def process_view_orders(
+        message: Message, session: AsyncSession, state: FSMContext, manager: OrderManager) -> None:
+    text = 'Произошла ошибка. Нажмите на команду /start, чтобы попробовать снова.'
+    reply_markup = None
+    in_state = False
+    try:
+        await manager.receive_all_customer_orders(session, message, state)
+        await state.set_state(OrdersViewState.order_views)
+        await message_response(
+            message=message,
+            text=order_view(manager.current_order()),
+            reply_markup=order_view_scroll_kb(*manager.current_order_position()),
+            state=state
+        )
+        text = 'Для возвращения в главное меню нажмите на кнопку <b><i>Вернуться в главное меню</i></b>'
+        reply_markup = back_to_initial_kb()
+        in_state = True
+    except IsNotCustomer:
+        text = ('Вас больше нет в списке заказчиков. Пройдите повторную авторизацию. '
+                'Для этого выберите в меню команду /start')
+        reply_markup = ReplyKeyboardRemove()
+    except OrdersNotExist:
+        text = 'У вас нет пока нет заказов.'
+        reply_markup = initial_kb()
+    finally:
+        await message_response(
+            message=message,
+            text=text,
+            reply_markup=reply_markup,
+            state=state if in_state else None
+        )
+
+
+@router.message(StateFilter(default_state), F.text.endswith('Удаление активных заказов'))
 async def process_delete_order(
         message: Message, session: AsyncSession, state: FSMContext, manager: OrderManager) -> None:
     text = 'Произошла ошибка. Нажмите на команду /start, чтобы попробовать снова.'
     reply_markup = None
     in_state = False
     try:
-        await manager.receive_customer_orders(session, message, state)
+        await manager.receive_valid_customer_orders(session, message, state)
         await state.set_state(CancelOrderState.order_choices)
         await message_response(
             message=message,
@@ -219,7 +254,7 @@ async def process_delete_order(
         text = ('Вас больше нет в списке заказчиков. Пройдите повторную авторизацию. '
                 'Для этого выберите в меню команду /start')
         reply_markup = ReplyKeyboardRemove()
-    except ValidOrdersNotExist:
+    except OrdersNotExist:
         text = 'У вас нет активных заказов.'
         reply_markup = initial_kb()
     finally:
@@ -232,11 +267,13 @@ async def process_delete_order(
 
 
 @router.callback_query(
+    StateFilter(OrdersViewState.order_views), F.data.startswith('prev') | F.data.startswith('next'))
+@router.callback_query(
     StateFilter(CancelOrderState.order_choices), F.data.startswith('prev') | F.data.startswith('next'))
 async def process_listing_orders(
         callback: CallbackQuery, state: FSMContext, manager: OrderManager) -> None:
     await manager.process_scroll(callback, state)
-    await edit_order_response(callback, manager)
+    await edit_order_response(callback, state, manager)
 
 
 @router.callback_query(StateFilter(CancelOrderState.order_choices), F.data.startswith('delete'))
@@ -249,7 +286,7 @@ async def process_delete_order(
         show_alert=True,
     )
     try:
-        await edit_order_response(callback, manager)
+        await edit_order_response(callback, state, manager)
     except EmptyException:
         await message_response(
             message=callback.message,
@@ -260,6 +297,7 @@ async def process_delete_order(
         await terminate_state_branch(callback.message, state, add_last=False)
 
 
+@router.message(StateFilter(OrdersViewState.order_views), F.text.endswith('Вернуться в главное меню'))
 @router.message(StateFilter(CancelOrderState.order_choices), F.text.endswith('Вернуться в главное меню'))
 async def process_back_to_main_menu(message: Message, state: FSMContext) -> None:
     await message_response(
@@ -270,11 +308,18 @@ async def process_back_to_main_menu(message: Message, state: FSMContext) -> None
     await terminate_state_branch(message, state)
 
 
-async def edit_order_response(callback: CallbackQuery, manager: OrderManager) -> None:
+async def edit_order_response(callback: CallbackQuery, state: FSMContext, manager: OrderManager) -> None:
+    markup = None
+    current_state = await state.get_state()
+    match current_state:
+        case OrdersViewState.order_views:
+            markup = order_view_scroll_kb(*manager.current_order_position())
+        case CancelOrderState.order_choices:
+            markup = delete_order_kb_new_new(*manager.current_order_position())
     await edit_response(
         message=callback.message,
         text=order_view(manager.current_order()),
-        reply_markup=delete_order_kb_new_new(*manager.current_order_position())
+        reply_markup=markup
     )
 
 

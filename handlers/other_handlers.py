@@ -1,4 +1,4 @@
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from presentation.responses import message_response, callback_response
 
@@ -14,6 +14,11 @@ async def process_user_message(message: Message):
              'А пока, если вам нужна помощь по работе бота '
              'нажмите на команду /help и следуйте инструкциям.'
     )
+
+
+@router.callback_query(F.data == 'no action')
+async def process_no_action_callback(callback: CallbackQuery):
+    await callback_response(callback)
 
 
 @router.callback_query()

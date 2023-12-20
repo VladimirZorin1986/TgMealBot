@@ -309,7 +309,7 @@ class OrderManager(ServiceManager):
             selected_details=details
         )
 
-    async def receive_customer_orders(
+    async def receive_valid_customer_orders(
             self, session: AsyncSession, message: Message, state: FSMContext) -> None:
         db_session = self._db(session)
         customer = await self._get_customer_from_msg(db_session, message)
@@ -321,13 +321,25 @@ class OrderManager(ServiceManager):
             self._dll.set_data(data)
             await self._save(state)
         else:
-            raise ValidOrdersNotExist
+            raise OrdersNotExist
+
+    async def receive_all_customer_orders(
+            self, session: AsyncSession, message: Message, state: FSMContext) -> None:
+        db_session = self._db(session)
+        customer = await self._get_customer_from_msg(db_session, message)
+        orders = await customer.awaitable_attrs.orders
+        if orders:
+            data = [await self._create_order_form_from_order(db_session, order) for order in orders]
+            self._dll.set_data(data)
+            await self._save(state)
+        else:
+            raise OrdersNotExist
 
     def current_order(self) -> OrderForm:
         return self._dll.get_cur_data()
 
-    def current_order_position(self) -> tuple[int, int, int]:
-        return self._dll.prev, self._dll.next, self._dll.size
+    def current_order_position(self) -> tuple[int, int, int, int]:
+        return self._dll.prev, self._dll.cur, self._dll.next, self._dll.size
 
     async def process_scroll(self, callback: CallbackQuery, state: FSMContext) -> None:
         if callback.data.startswith('next'):

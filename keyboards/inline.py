@@ -75,7 +75,7 @@ def inline_confirm_cancel_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=kb)
 
 
-def delete_order_kb_new_new(prev_id: int, next_id: int, size: int) -> InlineKeyboardMarkup:
+def delete_order_kb_new_new(prev_id: int, cur_id: int, next_id: int, size: int) -> InlineKeyboardMarkup:
     if size == 1:
         keyboard = [
             [
@@ -98,6 +98,36 @@ def delete_order_kb_new_new(prev_id: int, next_id: int, size: int) -> InlineKeyb
                 ),
                 InlineKeyboardButton(
                     text=f'⏩ ({next_id + 1}/{size})',
+                    callback_data='next'
+                )
+            ]
+        ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def order_view_scroll_kb(prev_id: int, cur_id: int, next_id: int, size: int) -> InlineKeyboardMarkup:
+    if size == 1:
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    text=f'{cur_id + 1}/{size}',
+                    callback_data='no action'
+                )
+            ]
+        ]
+    else:
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    text='⏪',
+                    callback_data='prev'
+                ),
+                InlineKeyboardButton(
+                    text=f'{cur_id + 1}/{size}',
+                    callback_data='no_action'
+                ),
+                InlineKeyboardButton(
+                    text='⏩',
                     callback_data='next'
                 )
             ]

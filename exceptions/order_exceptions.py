@@ -14,7 +14,7 @@ class ValidMenusNotExist(Exception):
     pass
 
 
-class ValidOrdersNotExist(Exception):
+class OrdersNotExist(Exception):
     pass
 
 
