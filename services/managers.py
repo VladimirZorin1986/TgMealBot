@@ -122,7 +122,7 @@ class OrderManager(ServiceManager):
     def __init__(self):
         super().__init__(OrderForm())
         self._dll = OrdersDLL()
-        self._offset = 3
+        self._offset = 5
 
     async def start_process_new_order(
             self, session: AsyncSession, state: FSMContext, message: Message) -> None:
