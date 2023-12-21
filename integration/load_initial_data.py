@@ -26,7 +26,7 @@ async def async_main() -> None:
             MealType(name='ужин', menus=[])
         ]
 
-        with open('canteen.csv', newline='') as csvfile:
+        with open('static/canteen.csv', newline='') as csvfile:
             spamreader = csv.DictReader(
                 csvfile,
                 fieldnames=['id', 'name'],
@@ -43,7 +43,7 @@ async def async_main() -> None:
                 )
                 canteens.append(canteen)
 
-        with open('delivery_place.csv', newline='') as csvfile:
+        with open('static/delivery_place.csv', newline='') as csvfile:
             spamreader = csv.DictReader(
                 csvfile,
                 fieldnames=['id', 'name', 'begin_date', 'end_date', 'custom_menu', 'canteen_id'],
@@ -63,7 +63,7 @@ async def async_main() -> None:
                 )
                 places.append(place)
 
-        with open('menu.csv', newline='') as csvfile:
+        with open('static/menu.csv', newline='') as csvfile:
             spamreader = csv.DictReader(
                 csvfile,
                 fieldnames=['id', 'name', 'date', 'beg_time', 'end_time', 'meal_type_id', 'canteen_id'],
@@ -84,7 +84,7 @@ async def async_main() -> None:
                 )
                 menus.append(menu)
 
-        with open('menu_position.csv', newline='') as csvfile:
+        with open('static/menu_position.csv', newline='') as csvfile:
             spamreader = csv.DictReader(
                 csvfile,
                 fieldnames=['id', 'name', 'weight', 'cost', 'complex_qty', 'menu_id'],
