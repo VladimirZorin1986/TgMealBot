@@ -239,10 +239,14 @@ async def process_listing_orders(
 @router.callback_query(StateFilter(CancelOrderState.order_choices), F.data.startswith('delete'))
 async def process_delete_order(
         callback: CallbackQuery, session: AsyncSession, manager: OrderManager, state: FSMContext) -> None:
-    await manager.cancel_order(session, state)
+    if order := await manager.valid_order_to_delete(state):
+        await manager.cancel_order(session, order)
+        text = 'Заказ успешно удален'
+    else:
+        text = 'Заказ не может быть удален'
     await callback_response(
         callback=callback,
-        text='Заказ успешно удален',
+        text=text,
         show_alert=True,
     )
     try:

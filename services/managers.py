@@ -159,7 +159,8 @@ class OrderManager(ServiceManager):
         self._set_attrs(
             menu_id=menu.id,
             menu_name=menu.name,
-            menu_date=menu.date
+            menu_date=menu.date,
+            menu_end_time=menu.end_time
         )
         return menu
 
@@ -256,8 +257,7 @@ class OrderManager(ServiceManager):
 
     async def _is_valid_order(self, db_session: DbSessionManager, order: Order) -> bool:
         customer = await db_session.get_obj_by_id(Customer, order.customer_id)
-        menu = await db_session.get_obj_by_id(Menu, order.menu_id)
-        return await self._is_valid_customer(customer) and await self._is_valid_menu(db_session, menu)
+        return await self._is_valid_customer(customer) and self._model.menu_end_time >= datetime.datetime.now()
 
     def _create_order_from_model(self) -> Order:
         order_details = [
@@ -293,6 +293,8 @@ class OrderManager(ServiceManager):
         return details
 
     async def _create_order_form_from_order(self, db_session, order: Order) -> OrderForm:
+        if not order:
+            raise OrdersNotExist
         menu = await db_session.get_obj_by_id(Menu, order.menu_id)
         place = await db_session.get_obj_by_id(DeliveryPlace, order.place_id)
         canteen = await db_session.get_obj_by_id(Canteen, place.canteen_id)
@@ -300,12 +302,14 @@ class OrderManager(ServiceManager):
         return OrderForm(
             order_id=order.id,
             created_at=order.created_at,
+            sent_to_eis=order.sent_to_eis,
             amt=order.amt,
             canteen_name=canteen.name,
             place_name=place.name,
             custom_menu=place.custom_menu,
             menu_name=menu.name,
             menu_date=menu.date,
+            menu_end_time=menu.end_time,
             selected_details=details
         )
 
@@ -313,16 +317,21 @@ class OrderManager(ServiceManager):
             self, session: AsyncSession, message: Message, state: FSMContext, valid: bool) -> None:
         db_session = self._db(session)
         customer = await self._get_customer_from_msg(db_session, message)
+        data = [await self._create_order_form_from_order(db_session, order)
+                for order in await customer.awaitable_attrs.orders]
         if valid:
-            orders = [order for order in await customer.awaitable_attrs.orders if not order.sent_to_eis]
-        else:
-            orders = await customer.awaitable_attrs.orders
-        if orders:
-            data = [await self._create_order_form_from_order(db_session, order) for order in orders]
+            data = list(filter(self.is_valid_order_form, data))
+        try:
             self._dll.set_data(data)
             await self._save(state)
-        else:
+        except EmptyException:
             raise OrdersNotExist
+
+    @staticmethod
+    def is_valid_order_form(order_form) -> bool:
+        if not order_form.sent_to_eis and order_form.menu_end_time >= datetime.datetime.now():
+            return True
+        return False
 
     def current_order(self) -> OrderForm:
         return self._dll.get_cur_data()
@@ -337,8 +346,12 @@ class OrderManager(ServiceManager):
             self._dll.turn_prev()
         await self._save(state)
 
-    async def cancel_order(self, session: AsyncSession, state: FSMContext) -> None:
-        db_session = self._db(session)
+    async def valid_order_to_delete(self, state: FSMContext) -> OrderForm | None:
         order_form = self._dll.delete_cur_data()
-        await db_session.delete_obj_by_id(Order, order_form.order_id)
         await self._save(state)
+        if self.is_valid_order_form(order_form):
+            return order_form
+
+    async def cancel_order(self, session: AsyncSession, order_form: OrderForm) -> None:
+        db_session = self._db(session)
+        await db_session.delete_obj_by_id(Order, order_form.order_id)
