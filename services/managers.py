@@ -165,13 +165,23 @@ class OrderManager(ServiceManager):
         return menu
 
     async def _get_raw_details_from_menu(self, menu: Menu) -> dict[int, DetailForm]:
-        raw_details = {
-            position.id: DetailForm(
-                menu_pos_id=position.id,
-                menu_pos_name=position.name,
-                menu_pos_cost=position.cost if position.cost else 0
-            ) for position in await menu.awaitable_attrs.positions
-        }
+        if self.complex_menu():
+            raw_details = {
+                position.id: DetailForm(
+                    menu_pos_id=position.id,
+                    menu_pos_name=position.name,
+                    menu_pos_cost=position.cost * position.complex_qty if position.cost else 0,
+                    quantity=position.complex_qty
+                ) for position in await menu.awaitable_attrs.positions if position.complex_qty
+            }
+        else:
+            raw_details = {
+                position.id: DetailForm(
+                    menu_pos_id=position.id,
+                    menu_pos_name=position.name,
+                    menu_pos_cost=position.cost if position.cost else 0
+                ) for position in await menu.awaitable_attrs.positions
+            }
         self._set_attrs(raw_details=raw_details)
         return raw_details
 
@@ -257,7 +267,9 @@ class OrderManager(ServiceManager):
 
     async def _is_valid_order(self, db_session: DbSessionManager, order: Order) -> bool:
         customer = await db_session.get_obj_by_id(Customer, order.customer_id)
-        return await self._is_valid_customer(customer) and self._model.menu_end_time >= datetime.datetime.now()
+        exist_orders = await db_session.get_objs_by_attrs(Order, customer_id=order.customer_id, menu_id=order.menu_id)
+        return (not exist_orders.all() and await self._is_valid_customer(customer)
+                and self._model.menu_end_time >= datetime.datetime.now())
 
     def _create_order_from_model(self) -> Order:
         order_details = [

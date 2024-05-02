@@ -62,30 +62,30 @@ async def process_menu_button_with_context(message: Message) -> None:
 @router.callback_query(StateFilter(NewOrderState.menu_choice))
 async def new_order_positions(
         callback: CallbackQuery, session: AsyncSession, state: FSMContext, manager: OrderManager) -> None:
-    if manager.complex_menu():
-        try:
-            order = await manager.receive_complex_order(session, callback, state)
-            await state.set_state(NewOrderState.check_status)
-            await process_new_order_info_response(callback.message, state, order)
-        except NoPositionsSelected:
-            await message_response(
-                message=callback.message,
-                text='В данном меню нет комплексных позиций.',
-                reply_markup=ReplyKeyboardRemove(),
-                state=state
-            )
-    else:
-        positions = await manager.receive_menu_positions(session, callback, state)
-        await process_positions_response(callback.message, state, positions)
-        await state.set_state(NewOrderState.dish_choice)
-        await message_response(
-            message=callback.message,
-            text='После добавления блюд нажмите <b><i>Подтвердить</i></b>, чтобы сохранить заказ. '
-                 'Для продолжения вывода позиций меню нажмите на кнопку <b><i>Продолжить список</i></b>.'
-                 'Для отмены заказа нажмите <b><i>Отменить</i></b>.',
-            reply_markup=confirm_cancel_kb(),
-            state=state
-        )
+    # if manager.complex_menu():
+    #     try:
+    #         order = await manager.receive_complex_order(session, callback, state)
+    #         await state.set_state(NewOrderState.check_status)
+    #         await process_new_order_info_response(callback.message, state, order)
+    #     except NoPositionsSelected:
+    #         await message_response(
+    #             message=callback.message,
+    #             text='В данном меню нет комплексных позиций.',
+    #             reply_markup=ReplyKeyboardRemove(),
+    #             state=state
+    #         )
+    # else:
+    positions = await manager.receive_menu_positions(session, callback, state)
+    await process_positions_response(callback.message, state, positions)
+    await state.set_state(NewOrderState.dish_choice)
+    await message_response(
+        message=callback.message,
+        text='После добавления блюд нажмите <b><i>Подтвердить</i></b>, чтобы сохранить заказ. '
+             'Для продолжения вывода позиций меню нажмите на кнопку <b><i>Продолжить список</i></b>.'
+             'Для отмены заказа нажмите <b><i>Отменить</i></b>.',
+        reply_markup=confirm_cancel_kb(),
+        state=state
+    )
     await callback_response(callback)
 
 
