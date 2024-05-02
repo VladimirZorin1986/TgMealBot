@@ -213,26 +213,26 @@ class OrderManager(ServiceManager):
     def complex_menu(self) -> bool:
         return not self._model.custom_menu
 
-    async def _get_details_from_complex_menu(self, menu: Menu) -> list[DetailForm]:
-        selected_details = [
-            DetailForm(
-                menu_pos_id=position.id,
-                menu_pos_name=position.name,
-                menu_pos_cost=position.cost if position.cost else 0,
-                quantity=position.complex_qty
-            ) for position in await menu.awaitable_attrs.positions if position.complex_qty
-        ]
-        self._set_attrs(selected_details=selected_details)
-        return selected_details
-
-    async def receive_complex_order(
-            self, session: AsyncSession, callback: CallbackQuery, state: FSMContext) -> OrderForm:
-        db_session = self._db(session)
-        menu = await self._get_menu_info(db_session, self._get_id_from_callback(callback))
-        selected_details = await self._get_details_from_complex_menu(menu)
-        self._set_attrs(amt=sum(detail.menu_pos_cost * detail.quantity for detail in selected_details))
-        await self._save(state)
-        return self.receive_full_order()
+    # async def _get_details_from_complex_menu(self, menu: Menu) -> list[DetailForm]:
+    #     selected_details = [
+    #         DetailForm(
+    #             menu_pos_id=position.id,
+    #             menu_pos_name=position.name,
+    #             menu_pos_cost=position.cost if position.cost else 0,
+    #             quantity=position.complex_qty
+    #         ) for position in await menu.awaitable_attrs.positions if position.complex_qty
+    #     ]
+    #     self._set_attrs(selected_details=selected_details)
+    #     return selected_details
+    #
+    # async def receive_complex_order(
+    #         self, session: AsyncSession, callback: CallbackQuery, state: FSMContext) -> OrderForm:
+    #     db_session = self._db(session)
+    #     menu = await self._get_menu_info(db_session, self._get_id_from_callback(callback))
+    #     selected_details = await self._get_details_from_complex_menu(menu)
+    #     self._set_attrs(amt=sum(detail.menu_pos_cost * detail.quantity for detail in selected_details))
+    #     await self._save(state)
+    #     return self.receive_full_order()
 
     async def increment_position_quantity(self, callback: CallbackQuery, state: FSMContext) -> DetailForm:
         detail: DetailForm = self._model.raw_details.get(self._get_id_from_callback(callback))
