@@ -62,19 +62,6 @@ async def process_menu_button_with_context(message: Message) -> None:
 @router.callback_query(StateFilter(NewOrderState.menu_choice))
 async def new_order_positions(
         callback: CallbackQuery, session: AsyncSession, state: FSMContext, manager: OrderManager) -> None:
-    # if manager.complex_menu():
-    #     try:
-    #         order = await manager.receive_complex_order(session, callback, state)
-    #         await state.set_state(NewOrderState.check_status)
-    #         await process_new_order_info_response(callback.message, state, order)
-    #     except NoPositionsSelected:
-    #         await message_response(
-    #             message=callback.message,
-    #             text='В данном меню нет комплексных позиций.',
-    #             reply_markup=ReplyKeyboardRemove(),
-    #             state=state
-    #         )
-    # else:
     positions = await manager.receive_menu_positions(session, callback, state)
     await process_positions_response(callback.message, state, positions)
     await state.set_state(NewOrderState.dish_choice)
@@ -87,6 +74,22 @@ async def new_order_positions(
         state=state
     )
     await callback_response(callback)
+
+
+@router.message(StateFilter(NewOrderState.dish_choice), F.text.endswith('Заказать стандартный комплекс'))
+async def process_standard_complex(
+        message: Message, session: AsyncSession, state: FSMContext, manager: OrderManager) -> None:
+    try:
+        order = await manager.receive_complex_order(session, state)
+        await state.set_state(NewOrderState.check_status)
+        await process_new_order_info_response(message, state, order)
+    except NoPositionsSelected:
+        await message_response(
+            message=message,
+            text='В данном меню нет комплексных позиций.',
+            reply_markup=ReplyKeyboardRemove(),
+            state=state
+        )
 
 
 @router.message(StateFilter(NewOrderState.dish_choice), F.text.endswith('Продолжить список'))

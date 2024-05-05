@@ -21,7 +21,8 @@ def confirm_cancel_kb() -> ReplyKeyboardMarkup:
         [KeyboardButton(text='✅ Подтвердить'),
          KeyboardButton(text='❌ Отменить')
          ],
-        [KeyboardButton(text='⬇ Продолжить список')]
+        [KeyboardButton(text='⬇ Продолжить список')],
+        [KeyboardButton(text='🍽 Заказать стандартный комплекс')]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
