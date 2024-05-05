@@ -87,7 +87,6 @@ async def process_standard_complex(
         await message_response(
             message=message,
             text='В данном меню нет комплексных позиций.',
-            reply_markup=ReplyKeyboardRemove(),
             state=state
         )
 
