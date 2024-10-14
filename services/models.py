@@ -27,6 +27,7 @@ class DetailForm:
     menu_pos_id: int = field(default=None)
     menu_pos_name: str = field(default=None)
     menu_pos_cost: Decimal = field(default=None)
+    color_num: int = field(default=None)
 
 
 @dataclass

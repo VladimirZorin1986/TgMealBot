@@ -130,6 +130,8 @@ class MenuPosition(Base):
     menu_id: Mapped[int] = mapped_column(
         ForeignKey('menu.id', ondelete='CASCADE')
     )
+    eis_doc_num: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
+    color_num: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
 
 
 class Order(Base):

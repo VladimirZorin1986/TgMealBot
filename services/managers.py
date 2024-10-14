@@ -94,7 +94,7 @@ class UserManager(ServiceManager):
         if not canteen:
             db_session = self._db(session)
             canteen = await db_session.get_obj_by_id(Canteen, self._get_id_from_callback(callback))
-        return await canteen.awaitable_attrs.places
+        return [place for place in await canteen.awaitable_attrs.places if place.id != 58]
 
     async def authorize_customer(self, session: AsyncSession, callback: CallbackQuery) -> None:
         await self._update_customer_data(
@@ -171,7 +171,8 @@ class OrderManager(ServiceManager):
                     menu_pos_id=position.id,
                     menu_pos_name=position.name,
                     menu_pos_cost=position.cost * position.complex_qty if position.cost else 0,
-                    quantity=position.complex_qty
+                    quantity=position.complex_qty,
+                    color_num=position.color_num
                 ) for position in await menu.awaitable_attrs.positions if position.complex_qty
             }
         else:
@@ -179,7 +180,8 @@ class OrderManager(ServiceManager):
                 position.id: DetailForm(
                     menu_pos_id=position.id,
                     menu_pos_name=position.name,
-                    menu_pos_cost=position.cost if position.cost else 0
+                    menu_pos_cost=position.cost if position.cost else 0,
+                    color_num=position.color_num
                 ) for position in await menu.awaitable_attrs.positions
             }
         self._set_attrs(raw_details=raw_details)
@@ -219,7 +221,8 @@ class OrderManager(ServiceManager):
                 menu_pos_id=position.id,
                 menu_pos_name=position.name,
                 menu_pos_cost=position.cost if position.cost else 0,
-                quantity=position.complex_qty
+                quantity=position.complex_qty,
+                color_num=position.color_num
             ) for position in await menu.awaitable_attrs.positions if position.complex_qty
         ]
         self._set_attrs(selected_details=selected_details)
@@ -299,7 +302,8 @@ class OrderManager(ServiceManager):
                     quantity=order_detail.quantity,
                     menu_pos_id=menu_pos.id,
                     menu_pos_name=menu_pos.name,
-                    menu_pos_cost=menu_pos.cost
+                    menu_pos_cost=menu_pos.cost,
+                    color_num=menu_pos.color_num
                 )
             )
         return details
