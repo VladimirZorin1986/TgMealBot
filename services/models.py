@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
 from decimal import Decimal
 import datetime
-from typing import Generator
+from typing import Generator, Optional
 from aiogram.types import Message
+import pydantic
 from exceptions import EmptyException
 
 
@@ -127,3 +128,28 @@ class OrdersDLL:
         return result
 
 
+class SHDType(pydantic.BaseModel):
+    id: int
+    name: str
+
+
+class SNewHDRequest(pydantic.BaseModel):
+    type_id: int
+    user_id: int
+    request_text: str
+    phone_number: Optional[str] = None
+    user_name: Optional[str] = None
+
+
+class SCurrentHDRequest(pydantic.BaseModel):
+    id: int
+    name: str
+    user_id: int
+    request_text: str
+    created_at: datetime.datetime
+    phone_number: Optional[str] = None
+    user_name: Optional[str] = None
+    solution_text: Optional[str] = None
+    done_at: Optional[datetime.datetime] = None
+    prev_id: int
+    next_id: int

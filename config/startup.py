@@ -25,6 +25,10 @@ async def set_main_menu(bot: Bot):
         BotCommand(
             command='/cancel',
             description='Глобальная отмена действия'
+        ),
+        BotCommand(
+            command='/support',
+            description='Техподдержка пользователей'
         )
     ]
 

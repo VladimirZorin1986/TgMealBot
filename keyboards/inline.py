@@ -1,8 +1,11 @@
+from typing import List
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from database.models import Canteen, Menu, DeliveryPlace
-from keyboards.callbacks import CanteenCallbackFactory, PlaceCallbackFactory, MenuCallbackFactory
+from keyboards.callbacks import (CanteenCallbackFactory, PlaceCallbackFactory,
+                                 MenuCallbackFactory, HDTypeCallbackFactory)
 from services.models import DetailForm, DataPosition
+from services.models import SHDType, SCurrentHDRequest
 
 
 def show_canteens_kb(canteens: list[Canteen]) -> InlineKeyboardMarkup:
@@ -128,6 +131,59 @@ def help_chapters_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='🧍 Авторизация', callback_data='auth_help')],
-            [InlineKeyboardButton(text='🚚 Работа с заказами', callback_data='order_help')]
+            [InlineKeyboardButton(text='🚚 Работа с заказами', callback_data='order_help')],
+            [InlineKeyboardButton(text='💻 Техподдержка', callback_data='hd_help')],
         ]
     )
+
+
+def show_hd_types_kb(hd_types: List[SHDType]) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for hd_type in hd_types:
+        builder.button(
+            text=f'{hd_type.name}',
+            callback_data=HDTypeCallbackFactory(
+                hd_type_id=hd_type.id
+            ).pack()
+        )
+    return builder.adjust(1).as_markup()
+
+
+def confirm_request_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='✅ Отправить', callback_data='confirm'),
+                InlineKeyboardButton(text='❌ Отменить', callback_data='cancel')
+            ]
+        ]
+    )
+
+
+def scroll_requests(request: SCurrentHDRequest, is_admin: bool = False) -> InlineKeyboardMarkup:
+    first_line = [
+        InlineKeyboardButton(text='⏪', callback_data=f'scroll:{request.prev_id}'),
+        InlineKeyboardButton(text='⏩', callback_data=f'scroll:{request.next_id}')
+    ]
+    if is_admin:
+        first_line.insert(
+            1, InlineKeyboardButton(text='Ответить', callback_data=f'answer:{request.user_id}:{request.id}')
+        )
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            first_line,
+            [
+                InlineKeyboardButton(text='🔙 Вернуться назад', callback_data='back')
+            ]
+        ]
+    )
+
+
+def group_choice_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='Новые запросы', callback_data='new')],
+            [InlineKeyboardButton(text='Все запросы', callback_data='all')],
+        ]
+    )
+

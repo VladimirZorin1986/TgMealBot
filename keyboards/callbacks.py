@@ -11,3 +11,11 @@ class PlaceCallbackFactory(CallbackData, prefix='place'):
 
 class MenuCallbackFactory(CallbackData, prefix='menu'):
     menu_id: int
+
+
+class HDTypeCallbackFactory(CallbackData, prefix='hd_type'):
+    hd_type_id: int
+
+
+class HDRequestCallbackFactory(CallbackData, prefix='hd_request'):
+    hd_request_id: int

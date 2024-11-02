@@ -1,8 +1,8 @@
 import datetime
 from decimal import Decimal
 from typing import List, Optional
-from sqlalchemy import ForeignKey, Identity
-from sqlalchemy.types import BigInteger, String, SmallInteger, Integer, Date, DateTime, Numeric, Boolean
+from sqlalchemy import ForeignKey, Identity, text
+from sqlalchemy.types import BigInteger, String, SmallInteger, Integer, Date, DateTime, Numeric, Boolean, Text
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -175,4 +175,32 @@ class OrderDetail(Base):
     )
     menu_pos_id: Mapped[int] = mapped_column(
         ForeignKey('menu_position.id', ondelete='RESTRICT')
+    )
+
+
+class HdType(Base):
+    __tablename__ = 'hd_type'
+
+    id: Mapped[int] = mapped_column(SmallInteger, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+
+    requests: Mapped[List['HdRequest']] = relationship()
+
+
+class HdRequest(Base):
+    __tablename__ = 'hd_request'
+
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    phone_number: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    user_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    request_text: Mapped[str] = mapped_column(Text)
+    solution_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=text('NOW()'))
+    done_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
+
+    type_id: Mapped[int] = mapped_column(
+        SmallInteger,
+        ForeignKey(column='hd_type.id', ondelete='RESTRICT'),
+        index=True
     )

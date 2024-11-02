@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
-from aiogram.filters import StateFilter
+from aiogram.filters import StateFilter, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,7 +33,7 @@ async def process_auth_with_contact(
     )
 
 
-@router.message(StateFilter(AuthState.get_contact), ~F.contact)
+@router.message(StateFilter(AuthState.get_contact), ~F.contact, ~Command('support'))
 async def process_auth_no_contact(message: Message):
     await message_response(
         message=message,
